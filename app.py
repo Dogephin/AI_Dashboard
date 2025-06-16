@@ -2,10 +2,13 @@ from flask import Flask, render_template
 from llm import create_llm_client 
 from db import test_db_connection
 from analysis.overall_analysis import (
-    get_sample_results, 
+    get_error_frequency_results, 
     error_frequency_analysis, 
     extract_relevant_text,
-    bin_errors_over_time  
+    bin_errors_over_time,
+    get_user_results,
+    overall_user_analysis,
+    extract_points_only
 )
 
 app = Flask(__name__)
@@ -19,7 +22,7 @@ def home():
 
 @app.route('/overall')
 def overall():
-    results = get_sample_results()
+    results = get_error_frequency_results()
     if not results:
         analysis_text = "No data found."
         chart_data = {
@@ -45,7 +48,14 @@ def overall():
             ]
         }
 
-    return render_template('overall.html', chart_data=chart_data, analysis=analysis_text)
+    results2 = get_user_results()
+    if not results2:
+        insights = "No user data available."
+    else:
+        raw_analysis = overall_user_analysis(results2, llm_client)
+        insights = extract_points_only(raw_analysis)
+
+    return render_template('overall.html', chart_data=chart_data, analysis=analysis_text, insights=insights)
 
 @app.route('/session')
 def session():

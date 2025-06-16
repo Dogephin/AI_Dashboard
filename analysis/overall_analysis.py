@@ -8,7 +8,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_sample_results():
+# Error Frequency Over Time 
+def get_error_frequency_results():
     query = text("SELECT results FROM PacMetaAOM.ima_plan_session_game_status")
 
     try:
@@ -101,3 +102,52 @@ def extract_relevant_text(analysis_response):
     relevant_text = relevant_text.strip()
 
     return relevant_text
+
+# Overall User Analysis
+def get_user_results():
+    query = text("SELECT User_ID , results FROM PacMetaAOM.ima_plan_session ORDER BY User_ID")
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+        results2 = [dict(row._mapping) for row in rows]
+        logger.info(f"Fetched {len(results2)} rows from the database.")
+        return results2
+    except Exception as e:
+        logger.error(f"Failed to fetch results: {e}")
+        return []
+    
+def overall_user_analysis(results2, client): 
+    prompt_text = f"""
+    I have collected the overall data of all users. Here is the data:
+
+    {results2}
+
+    Can you analyze this data and provide the analysis and insights
+
+    """
+
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": "You are a data analyst."},
+            {"role": "user", "content": prompt_text}
+        ]
+    )
+    
+    user_analysis = response.choices[0].message.content
+    return user_analysis
+
+def extract_points_only(user_analysis):
+    match = re.search(r"(### 1\..*?)(?=### Recommendations|$)", user_analysis, re.DOTALL)
+    
+    if not match:
+        return "No key insights found."
+
+    good_info = match.group(1)
+    # Clean markdown formatting
+    good_info = re.sub(r'#+\s*', '', good_info)  # Remove heading markers like ###, ####
+    good_info = re.sub(r'\*\*(.*?)\*\*', r'\1', good_info)  # Remove bold formatting
+    return good_info.strip()
