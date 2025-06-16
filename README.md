@@ -1,9 +1,9 @@
 # ITP-Projek
 
 # Set up 
-pip install flask
-pip install python-dotenv
-pip install sqlalchemy
+- pip install flask
+- pip install python-dotenv
+- pip install sqlalchemy
 
 # Environment Variables
 Create .env file in root folder
