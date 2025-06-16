@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game Analysis Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    
+  </style>
+</head>
+<body>
+  <header>Game Analysis Dashboard - Overall</header>
+
+  <div class="dashboard-container">
+
+    <div class="chart-card">
+      <div class="chart-title">Error Frequency Over Time</div>
+      <canvas id="errorChart"></canvas>
+
+      <div class="insights-title">LLM Insights:</div>
+      <p class="insights-text">{{ analysis }}</p>
+    </div>
+
+  </div>
+
+  <!-- Data passed from Flask -->
+  <script>
+    const chartDataFromFlask = {{ chart_data | tojson | safe }};
+  </script>
+  <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
+</body>
+</html>
