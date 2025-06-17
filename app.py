@@ -1,15 +1,7 @@
 from flask import Flask, render_template
 from llm import create_llm_client 
 from db import test_db_connection
-from analysis.overall_analysis import (
-    get_error_frequency_results, 
-    error_frequency_analysis, 
-    extract_relevant_text,
-    bin_errors_over_time,
-    get_user_results,
-    overall_user_analysis,
-    extract_points_only
-)
+from analysis import overall_analysis as oa
 
 app = Flask(__name__)
 
@@ -22,7 +14,36 @@ def home():
 
 @app.route('/overall')
 def overall():
-    results = get_error_frequency_results()
+    # Average Scores per Minigame
+    avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()
+    
+    if not avg_scores:
+        avg_scores_analysis = "No session duration data available."
+    else:
+        avg_scores_analysis = oa.avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigame, llm_client)
+
+    labels = list(avg_scores.keys())
+    avg_values = [avg_scores[label] for label in labels]
+    max_values = [max_score_by_minigame.get(label, 0) for label in labels]
+
+    avg_score_chart_data = {
+        'labels': labels,
+        'datasets': [
+            {
+                'label': 'Average Score',
+                'data': avg_values,
+                'backgroundColor': 'rgba(54, 162, 235, 0.6)'
+            },
+            {
+                'label': 'Max Score',
+                'data': max_values,
+                'backgroundColor': 'rgba(255, 99, 132, 0.6)'
+            }
+        ]
+    }
+    
+    # Error Frequency vs Results 
+    results = oa.get_error_frequency_results()
     if not results:
         analysis_text = "No data found."
         chart_data = {
@@ -30,10 +51,10 @@ def overall():
             'datasets': []
         }
     else:
-        analysis_response = error_frequency_analysis(results, llm_client)
-        analysis_text = extract_relevant_text(analysis_response)
+        analysis_response = oa.error_frequency_analysis(results, llm_client)
+        analysis_text = oa.extract_relevant_text(analysis_response)
 
-        binned = bin_errors_over_time(results, bin_size=5)
+        binned = oa.bin_errors_over_time(results, bin_size=5)
         time_bins = list(binned.keys())
         warnings = [binned[t]['warnings'] for t in time_bins]
         minors = [binned[t]['minors'] for t in time_bins]
@@ -48,14 +69,42 @@ def overall():
             ]
         }
 
-    results2 = get_user_results()
+    # Performance vs Duration Analysis
+    duration_data = oa.get_duration_vs_errors()
+    if not duration_data:
+        duration_analysis = "No session duration data available."
+    else:
+        duration_analysis = oa.performance_vs_duration(duration_data, llm_client)
+    
+    scatter_chart_data = {
+        'datasets': [
+            {
+                'label': 'Score vs Session Duration',
+                'data': [
+                    {'x': entry['duration_minutes'], 'y': entry['score']}
+                    for entry in duration_data
+                ],
+                'backgroundColor': 'blue',
+                'pointRadius': 4
+            }
+        ]
+    }
+
+    # Overall User Performance
+    results2 = oa.get_user_results()
     if not results2:
         insights = "No user data available."
     else:
-        raw_analysis = overall_user_analysis(results2, llm_client)
-        insights = extract_points_only(raw_analysis)
+        raw_analysis = oa.overall_user_analysis(results2, llm_client)
+        insights = oa.extract_points_only(raw_analysis)
 
-    return render_template('overall.html', chart_data=chart_data, analysis=analysis_text, insights=insights)
+    return render_template('overall.html', chart_data=chart_data, 
+                           analysis=analysis_text, 
+                           insights=insights,
+                           duration_analysis=duration_analysis,
+                           scatter_chart_data=scatter_chart_data, 
+                           avg_score_chart_data=avg_score_chart_data,
+                            avg_scores_analysis=avg_scores_analysis)
 
 @app.route('/session')
 def session():

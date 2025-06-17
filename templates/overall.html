@@ -16,13 +16,34 @@
   <div class="dashboard-container">
 
     <div class="chart-card">
-      <div class="chart-title">Error Frequency Over Time</div>
-      <canvas id="errorChart"></canvas>
+    <div class="chart-title">Error Frequency Over Time & Session Duration vs Score</div>
 
-      <div class="insights-title">LLM Insights:</div>
-      <p class="insights-text">{{ analysis }}</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; align-items: flex-start;">
+
+      <!-- Bar Chart + Insight -->
+      <div style="flex: 1; min-width: 300px;">
+        <canvas id="avgScoreChart" width="600" height="300"></canvas>
+        <div class="insights-title">LLM Insights:</div>
+        <p class="insights-text">{{ avg_scores_analysis }}</p>
+      </div>
+
+      <!-- Error Chart + Insight -->
+      <div style="flex: 1; min-width: 300px;">
+        <canvas id="errorChart"></canvas>
+        <div class="insights-title">LLM Insights:</div>
+        <p class="insights-text">{{ analysis }}</p>
+      </div>
+
+      <!-- Scatter Chart + Insight -->
+      <div style="flex: 1; min-width: 300px;">
+        <canvas id="scatterChart" width="600" height="300"></canvas>
+        <div class="insights-title">LLM Insights:</div>
+        <p class="insights-text">{{ duration_analysis }}</p>
+      </div>
+
     </div>
-    
+  </div>
+     <!-- Overall User analysis -->
     <div class="chart-card">
       <div class="chart-title">Overall User Analysis</div>
       <div class="insights-title">LLM Insights:</div>
@@ -34,7 +55,10 @@
   <!-- Data passed from Flask -->
   <script>
     const chartDataFromFlask = {{ chart_data | tojson | safe }};
+    const scatterChartDataFromFlask = {{ scatter_chart_data | tojson }};
+    const avgScoreChartDataFromFlask = {{ avg_score_chart_data | tojson }};
   </script>
+  
   <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
 </body>
 </html>
