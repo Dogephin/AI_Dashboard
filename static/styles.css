@@ -100,7 +100,10 @@ canvas {
     margin-bottom: 0.5rem;
 }
 
-.insights-text {
+#avg-scores-analysis,
+#error-frequency-analysis,
+#duration-analysis,
+#overall-user-analysis {
     color: black;
     white-space: pre-wrap;
     line-height: 1.6;

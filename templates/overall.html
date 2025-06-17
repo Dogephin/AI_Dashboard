@@ -24,21 +24,24 @@
       <div style="flex: 1; min-width: 300px;">
         <canvas id="avgScoreChart" width="600" height="300"></canvas>
         <div class="insights-title">LLM Insights:</div>
-        <p class="insights-text">{{ avg_scores_analysis }}</p>
+        <h3>Average Scores Analysis</h3>
+        <div id="avg-scores-analysis">Loading...</div>
       </div>
 
       <!-- Error Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
         <canvas id="errorChart"></canvas>
         <div class="insights-title">LLM Insights:</div>
-        <p class="insights-text">{{ analysis }}</p>
+        <h3>Error Frequency Analysis</h3>
+        <div id="error-frequency-analysis">Loading...</div>
       </div>
 
       <!-- Scatter Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
         <canvas id="scatterChart" width="600" height="300"></canvas>
         <div class="insights-title">LLM Insights:</div>
-        <p class="insights-text">{{ duration_analysis }}</p>
+        <h3>Performance vs Duration</h3>
+        <div id="duration-analysis">Loading...</div>
       </div>
 
     </div>
@@ -47,7 +50,8 @@
     <div class="chart-card">
       <div class="chart-title">Overall User Analysis</div>
       <div class="insights-title">LLM Insights:</div>
-      <p class="insights-text">{{ insights }}</p>
+      <h3>Overall User Insights</h3>
+      <div id="overall-user-analysis">Loading...</div>
     </div>
 
   </div>
@@ -60,5 +64,6 @@
   </script>
   
   <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/overall_loadbalancing.js') }}"></script>
 </body>
 </html>
