@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSelect = document.getElementById('user-select');
     const gameSelect = document.getElementById('game-select');
 
+    let rowDataArray = [];
+
     form.addEventListener('submit', (e) => {
         e.preventDefault(); // prevent page reload
 
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const container = document.getElementById('results-container');
                 container.className = 'stats-container';
                 container.innerHTML = ''; // Clear previous content
+                rowDataArray = []; // clear previous rows
 
                 if (data.status === 'error') {
                     container.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
@@ -111,11 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Add "Attempt" column header
                     const thead = document.createElement('thead');
-                    thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+                    thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}<th>AI Analysis</th></tr>`;
                     table.appendChild(thead);
 
                     const tbody = document.createElement('tbody');
                     data.results.forEach((row, rowIndex) => {
+                        rowDataArray.push(row); 
                         const tr = document.createElement('tr');
 
                         // Add attempt number first
@@ -144,6 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }).join('');
 
+                        rowHtml += `
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary analyze-btn" data-index='${rowIndex}' title="Analyze this row">
+                                🔍
+                            </button>
+                        </td>`;
+
                         tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
                     });
@@ -171,6 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
                                 fullTextEl.style.display = 'none';
                                 shortTextEl.style.display = 'inline';
                             });
+                        });
+                    });
+
+                    // Attach analyze button click handlers
+                    document.querySelectorAll('.analyze-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const index = parseInt(btn.getAttribute('data-index'));
+                            const rowData = rowDataArray[index];
+
+                            fetch('/user', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ row_analysis: rowData })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Row analysis response:', data);
+                                    alert(data.message || 'Row analysis complete. Check console.');
+                                })
+                                .catch(err => console.error('Analysis error:', err));
                         });
                     });
                 }
