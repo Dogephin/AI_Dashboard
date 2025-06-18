@@ -1,13 +1,15 @@
 # ITP-Projek
 
-# Set up 
-- pip install flask
-- pip install python-dotenv
-- pip install sqlalchemy
+## Set up
 
-# Environment Variables
+- Install dependencies using `pip install -r requirements.txt`
+
+## Environment Variables
+
 Create .env file in root folder
-Include the following: 
+
+Include the following:
+
 1. DEEPSEEK_API_KEY=
 2. DB_HOST=
 3. DB_PORT=
