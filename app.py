@@ -1,14 +1,19 @@
-from flask import Flask, render_template
+from flask import Flask, request, render_template, jsonify
 from llm import create_llm_client 
 from db import test_db_connection
-from flask import jsonify
 from analysis import overall_analysis as oa
-
+from analysis import user_analysis as ua
+import logging
 
 app = Flask(__name__)
 
 test_db_connection()
 llm_client = create_llm_client()
+
+logging.basicConfig(
+    level=logging.INFO,  # or DEBUG for more detail
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 @app.route('/')
 def home():
@@ -141,9 +146,24 @@ def overall():
 def session():
     return render_template('session.html')
 
-@app.route('/user')
+
+
+@app.route('/user', methods=['GET', 'POST'])
 def user():
-    return render_template('user.html')
+    users = ua.get_list_of_users()
+    games = ua.get_list_of_games()
+
+    if request.method == 'POST':
+        user_id = request.json.get('user_id')
+        game_id = request.json.get('game_id')
+        
+        # for debugging purposes for now, just print the IDs
+        print(f"User ID: {user_id}, Game ID: {game_id}")
+        
+        return jsonify({"status": "success"})
+
+    return render_template('user.html', users=users, games=games)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
