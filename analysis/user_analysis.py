@@ -50,9 +50,10 @@ def get_list_of_games():
 def get_user_game_results(user_id, game_id):
     query = text("""
         SELECT
-        ps.Session_ID, ps.User_ID,
-        psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, psgs.Score, psgs.Results AS "Overall_Results",
-        pg.Level
+        -- ps.Session_ID, ps.User_ID,
+        -- psgs.Plan_Game_ID
+        psgs.Status, psgs.Game_Start, psgs.Game_End, psgs.Score, psgs.Results AS "Overall_Results"
+        -- pg.Level
         FROM ima_plan_session as ps
         JOIN ima_plan_session_game_status as psgs ON ps.Session_ID = psgs.Session_ID
         JOIN ima_plan_game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID

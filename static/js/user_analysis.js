@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scores = data.analysis.trend.map(item => item.Score);
 
                     new Chart(canvas, {
-                        type: 'bar', // base type (will be overridden for line)
+                        type: 'bar', 
                         data: {
                             labels: labels,
                             datasets: [
@@ -103,21 +103,76 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    // Table for debugging (will be removed later)
+                    // Table
                     const table = document.createElement('table');
-                    table.className = 'table table-bordered table-striped';
-                    const keys = Object.keys(data.results[0]);
+                    table.className = 'table table-bordered table-striped mt-5';
+                    const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
+
+
+                    // Add "Attempt" column header
                     const thead = document.createElement('thead');
-                    thead.innerHTML = `<tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+                    thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
                     table.appendChild(thead);
+
                     const tbody = document.createElement('tbody');
-                    data.results.forEach(row => {
+                    data.results.forEach((row, rowIndex) => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = keys.map(k => `<td>${row[k]}</td>`).join('');
+
+                        // Add attempt number first
+                        let rowHtml = `<td>Attempt ${rowIndex + 1}</td>`;
+
+                        rowHtml += keys.map(k => {
+                            if (k === "Overall_Results" && row[k]) {
+                                const shortText = row[k].substring(0, 100);
+                                const cellId = `full-result-${rowIndex}`;
+                                return `
+                                    <td>
+                                        <div class="result-wrapper">
+                                            <span class="show-full-result"
+                                                data-target="${cellId}"
+                                                data-fulltext="${encodeURIComponent(row[k])}"
+                                                style="cursor: pointer; color: blue;"
+                                                title="Click to view full result">
+                                                ${shortText}...
+                                            </span>
+                                            <div id="${cellId}" class="full-result-text" style="display:none; white-space: pre-wrap; margin-top: 5px;"></div>
+                                        </div>
+                                    </td>
+                                `;
+                            } else {
+                                return `<td>${row[k]}</td>`;
+                            }
+                        }).join('');
+
+                        tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
                     });
                     table.appendChild(tbody);
                     container.appendChild(table);
+
+
+                    // Attach event listeners to all .show-full-result elements
+                    document.querySelectorAll('.show-full-result').forEach(span => {
+                        span.addEventListener('click', () => {
+                            const targetId = span.getAttribute('data-target');
+                            const fullText = decodeURIComponent(span.getAttribute('data-fulltext'));
+                            const fullTextEl = document.getElementById(targetId);
+                            const shortTextEl = span;
+
+                            if (fullTextEl.style.display === 'none') {
+                                fullTextEl.style.display = 'block';
+                                fullTextEl.innerText = fullText;
+                                shortTextEl.style.display = 'none';  // hide short version
+                            } else {
+                                fullTextEl.style.display = 'none';
+                                shortTextEl.style.display = 'inline';  // show short version
+                            }
+                            fullTextEl.addEventListener('click', () => {
+                                fullTextEl.style.display = 'none';
+                                shortTextEl.style.display = 'inline';
+                            });
+                        });
+                    });
                 }
             })
             .catch(error => console.error('Error:', error));
