@@ -91,3 +91,81 @@ def analyze_results(results):
         "max_score": max(all_scores) if all_scores else 0,
         "trend": score_trend
     }
+
+
+def analyze_single_attempt(results, client):
+
+    prompt_text = f"""
+    You are an expert training analyst. I will provide you with the detailed JSON result of a user's attempt in a serious game training module. Your task is to analyze the performance based on the structured metrics provided.
+
+    The JSON will contain the following fields:
+
+    `Game_Start` and `Game_End`: timestamps indicating the start and end of the attempt.
+    `total-time`: the total time taken in seconds.
+    `final-score`: the user's total score for the attempt.
+    `accuracy`: percentage of accuracy based on correct actions performed.
+    `status`: whether the attempt was complete or incomplete.
+    `errors`: a nested object with categorized errors:
+
+    `good`: actions correctly performed with relevant `score`, `time`, `text`, `short`, and `milestone`.
+    `minor`: minor issues (e.g., suboptimal timing or missteps), each with a `score` penalty, `time`, `text`, and `type` (e.g., `"early"` or `"incorrect"`).
+    `warning`: warning-level issues (not critical but worth noting).
+    `severe`: severe mistakes (critical actions missed or incorrectly performed).
+    `gameEvent`: a chronological list of start-end labeled milestones or stages performed by the user, with timestamps.
+
+    Based on this JSON, please:
+
+    1. Provide a summary of the user's overall performance (e.g., efficiency, accuracy, completion).
+    2. Highlight any severe or minor errors and what they indicate about the user's understanding or behavior.
+    3. Comment on the sequence and timing of the user's actions — was the progression logical or disorganized?
+    4. Suggest specific areas for improvement, and which types of errors should be prioritized for training.
+    5. If performance was good, point out the strengths and what the user did especially well.
+
+    Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language.
+
+
+    Here is the data:
+    {json.dumps(results, indent=2)}
+    """
+
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": "You are a gameplay data analyst."},
+            {"role": "user", "content": prompt_text}
+        ]
+    )
+
+    analysis = response.choices[0].message.content
+    return analysis
+
+def response_cleanup(response):
+    # Remove bold and italic (e.g., **text**, *text*, __text__, _text_)
+    response = re.sub(r'(\*\*|__)(.*?)\1', r'\2', response)
+    response = re.sub(r'(\*|_)(.*?)\1', r'\2', response)
+
+    # Remove inline code `text`
+    response = re.sub(r'`([^`]*)`', r'\1', response)
+
+    # Remove headings (e.g., ### Title)
+    response = re.sub(r'^\s{0,3}#{1,6}\s*', '', response, flags=re.MULTILINE)
+
+    # Remove horizontal rules (---, ***, etc.)
+    response = re.sub(r'^-{3,}|^\*{3,}|^_{3,}', '', response, flags=re.MULTILINE)
+
+    # Remove blockquotes
+    response = re.sub(r'^\s{0,3}>\s?', '', response, flags=re.MULTILINE)
+
+    # Remove links but keep the text [text](url) -> text
+    response = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', response)
+
+    # Remove images ![alt](url) -> alt
+    response = re.sub(r'!\[([^\]]*)\]\([^)]+\)', r'\1', response)
+
+    # Remove inline HTML tags (e.g., <b>, <i>)
+    response = re.sub(r'<[^>]+>', '', response)
+
+    # Normalize extra whitespace
+    response = re.sub(r'\n{3,}', '\n\n', response)
+
+    return response.strip()

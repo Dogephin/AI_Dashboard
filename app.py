@@ -163,12 +163,12 @@ def user():
             results = ua.get_user_game_results(user_id, game_id)
 
             if not results:
-                return jsonify({"status": "error", "message": "No results found for this user and game."})
+                return jsonify({"status": "error", "message": "No gameplay records were found for the selected user and game."})
             else:
                 analysis = ua.analyze_results(results)
                 return jsonify({
                     "status": "success",
-                    "message": "Results found",
+                    "message": "Gameplay records retrieved for the selected user and game are displayed below.",
                     "results": results,
                     "analysis": analysis
                 })
@@ -178,7 +178,10 @@ def user():
             row_data = payload['row_analysis']
             print("\nAnalyzing individual row:\n")
             print(row_data) # print out for debugging
-            return jsonify({"message": "Row analysis received and printed."})
+            single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client))
+            print("\nSingle attempt analysis response:\n")
+            print(single_attempt_analysis_response)
+            return jsonify({"message": "AI Analysis Completed.", "analysis": single_attempt_analysis_response})
 
         else:
             return jsonify({"status": "error", "message": "Invalid POST payload."})

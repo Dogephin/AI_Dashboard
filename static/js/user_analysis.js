@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const scores = data.analysis.trend.map(item => item.Score);
 
                     new Chart(canvas, {
-                        type: 'bar', 
+                        type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const tbody = document.createElement('tbody');
                     data.results.forEach((row, rowIndex) => {
-                        rowDataArray.push(row); 
+                        rowDataArray.push(row);
                         const tr = document.createElement('tr');
 
                         // Add attempt number first
@@ -191,6 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             const index = parseInt(btn.getAttribute('data-index'));
                             const rowData = rowDataArray[index];
 
+                            // Show modal with loading message
+                            const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+                            const modalContent = document.getElementById('ai-analysis-content');
+                            modalContent.innerHTML = `
+                                <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="mt-3">Analyzing performance... please wait.</div>
+                                </div>
+                            `;
+                            modal.show();
+
                             fetch('/user', {
                                 method: 'POST',
                                 headers: {
@@ -200,10 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             })
                                 .then(response => response.json())
                                 .then(data => {
-                                    console.log('Row analysis response:', data);
-                                    alert(data.message || 'Row analysis complete. Check console.');
+                                    const result = data.analysis || data.message || 'No analysis result.';
+                                    modalContent.innerHTML = `<pre style="white-space: pre-wrap;">${result}</pre>`;
                                 })
-                                .catch(err => console.error('Analysis error:', err));
+                                .catch(err => {
+                                    console.error('Analysis error:', err);
+                                    modalContent.innerHTML = `<p class="text-danger">An error occurred while analyzing this attempt.</p>`;
+                                });
                         });
                     });
                 }
