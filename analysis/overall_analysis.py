@@ -77,6 +77,7 @@ def error_frequency_analysis(results, client):
     Please provide a clear, concise analysis of this error frequency data, including:
     - When errors tend to spike (which time bins have highest counts).
     - Whether warnings or minors tend to cluster early, mid, or late in sessions.
+    - Provide recommendations if possible.
 
     Please keep it as short and concise with clear titles.
     """
@@ -127,7 +128,8 @@ def overall_user_analysis(results2, client):
 
     {results2}
 
-    Can you analyze this data and provide the analysis and insights
+    Can you analyze this data and provide the analysis and insights. Please focus
+    on overall user analysis for everyone instead of individuals.
 
     """
 
@@ -213,8 +215,9 @@ def performance_vs_duration(data, client):
             {"role": "user", "content": prompt}
         ]
     )
-
-    return response.choices[0].message.content
+    insights_text = response.choices[0].message.content
+    cleaned_insights_avg_score = clear_formatting(insights_text)
+    return cleaned_insights_avg_score
 
 # Average Scores for all Minigames
 def get_practice_assessment_rows():
@@ -229,7 +232,6 @@ def get_practice_assessment_rows():
             rows = result.fetchall()
 
         sessions = [dict(row._mapping) for row in rows]
-        print(f"[INFO] Retrieved {len(sessions)} sessions with Practice or Assessment results.")
         if sessions:
             print(f"[DEBUG] First 5 Session IDs: {[s['Session_ID'] for s in sessions[:5]]}")
 
@@ -242,13 +244,11 @@ def get_practice_assessment_rows():
         for s in sessions:
             sid = s["Session_ID"]
             if sid in scores_dict:
-                s["score"] = scores_dict[sid].get("score")  # ensure lowercase "score"
+                s["score"] = scores_dict[sid].get("score") 
                 s["game_results"] = scores_dict[sid].get("results")
             else:
                 s["score"] = None
                 s["game_results"] = None
-
-        print(f"[DEBUG] Example session with score: {sessions[0] if sessions else 'None'}")
 
         return sessions
 
@@ -290,10 +290,8 @@ def calculate_avg_score_per_minigame(scores_rows):
             # Load JSON from string field
             data = json.loads(row['results'])
 
-            # Prefer level_name over game
             raw_name = data.get('level_name') or data.get('game', '')
 
-            # Clean HTML tags
             cleaned_name = re.sub(r'<.*?>', '', raw_name).strip()
 
             # Match pattern like "MG1 Practice", "MG2 Assessment"
@@ -320,7 +318,6 @@ def calculate_avg_score_per_minigame(scores_rows):
 
     print(f"[INFO] Calculated average scores for {len(avg_scores)} minigames.")
     print(f"[DEBUG] Example averages: {dict(list(avg_scores.items())[:3])}")
-    # print(f"[INFO] Max Scores Per Minigame: {max_score_by_minigame}")
     return avg_scores, max_score_by_minigame
 
 
@@ -373,4 +370,22 @@ def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigam
     )
 
     insights_text = response.choices[0].message.content
-    return insights_text
+    cleaned_insights_avg_score = clear_formatting(insights_text)
+    return cleaned_insights_avg_score
+
+def clear_formatting(response):
+    relevant_text = response  
+
+    # Clean markdown headers like ### or ####
+    relevant_text = re.sub(r'#+\s*', '', relevant_text)
+
+    # Remove bold formatting **bold**
+    relevant_text = re.sub(r'\*\*(.*?)\*\*', r'\1', relevant_text)
+
+    # Optionally remove italic formatting *italic*
+    relevant_text = re.sub(r'\*(.*?)\*', r'\1', relevant_text)
+
+    # Trim whitespace
+    relevant_text = relevant_text.strip()
+
+    return relevant_text
