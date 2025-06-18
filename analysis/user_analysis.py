@@ -120,8 +120,11 @@ def analyze_single_attempt(results, client):
     3. Comment on the sequence and timing of the user's actions — was the progression logical or disorganized?
     4. Suggest specific areas for improvement, and which types of errors should be prioritized for training.
     5. If performance was good, point out the strengths and what the user did especially well.
+    6. Provide any additional insights that could help in understanding the user's performance in this training module.
+    7. Provide a overall conclusion about the user's performance in this attempt.
 
-    Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language.
+    Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
+    No overall title is needed, just start with the main paragraphs and its headings.
 
 
     Here is the data:

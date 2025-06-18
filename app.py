@@ -176,11 +176,12 @@ def user():
         elif 'row_analysis' in payload:
             # Handle row analysis
             row_data = payload['row_analysis']
-            print("\nAnalyzing individual row:\n")
-            print(row_data) # print out for debugging
-            single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client))
-            print("\nSingle attempt analysis response:\n")
-            print(single_attempt_analysis_response)
+            # print("\nAnalyzing individual row:\n")
+            # print(row_data) # print out for debugging
+            # single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client)) # with cleanup
+            single_attempt_analysis_response = ua.analyze_single_attempt(row_data, llm_client)
+            # print("\nSingle attempt analysis response:\n")
+            # print(single_attempt_analysis_response)
             return jsonify({"message": "AI Analysis Completed.", "analysis": single_attempt_analysis_response})
 
         else:

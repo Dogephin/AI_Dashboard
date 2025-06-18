@@ -214,7 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 .then(response => response.json())
                                 .then(data => {
                                     const result = data.analysis || data.message || 'No analysis result.';
-                                    modalContent.innerHTML = `<pre style="white-space: pre-wrap;">${result}</pre>`;
+                                    const markdownHtml = marked.parse(result);
+                                    modalContent.innerHTML = `
+                                        <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                            ${markdownHtml}
+                                        </div>
+                                    `;
                                 })
                                 .catch(err => {
                                     console.error('Analysis error:', err);
