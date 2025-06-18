@@ -160,7 +160,17 @@ def user():
         # for debugging purposes for now, just print the IDs
         print(f"User ID: {user_id}, Game ID: {game_id}")
         
-        return jsonify({"status": "success"})
+        results = ua.get_user_game_results(user_id, game_id)
+        if not results:
+            return jsonify({"status": "error", "message": "No results found for this user and game."})
+        else:
+            analysis = ua.analyze_results(results)
+            return jsonify({
+                "status": "success",
+                "message": "Results found",
+                "results": results,
+                "analysis": analysis
+            })
 
     return render_template('user.html', users=users, games=games)
 

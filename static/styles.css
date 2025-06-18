@@ -118,6 +118,12 @@ canvas {
     justify-content: center;
 }
 
+.stats-container {
+    padding: 2rem;
+    display: block;
+    justify-content: center;
+}
+
 .selection-card {
     background: #ffffff;
     padding: 2rem;
@@ -126,6 +132,21 @@ canvas {
     width: 100%;
     max-width: 500px;
 }
+
+.stats-card {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.stats-card canvas {
+    max-height: 300px;
+    width: 100% !important;
+    height: auto !important;
+}
+
 
 .form-group {
     margin-bottom: 1.5rem;
