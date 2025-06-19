@@ -1,7 +1,7 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to bottom right, #e0eafc, #cfdef3, #f9fafc);
+    background-color: #dddddd;
     color: #fff;
     display: flex;
     flex-direction: column;
@@ -28,7 +28,6 @@ header {
     align-items: center;
     gap: 2.5rem;
     padding: 2rem;
-    flex-wrap: wrap;
 }
 
 .card {
@@ -191,4 +190,51 @@ canvas {
 
 .form-group {
     margin-bottom: 1.5rem;
+}
+
+.results-table .btn {
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #506dff;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.results-table .sparkle {
+    fill: white;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.results-table .text {
+    font-weight: 600;
+    color: #AAAAAA;
+    font-size: medium;
+}
+
+.results-table .btn .text {
+    color: white;
+    font-weight: 600;
+}
+
+.results-table .btn:hover {
+    background: #354ee2;
+    transform: translateY(-1px);
+}
+
+.results-table .btn:hover .text {
+    color: #eaf4ff;
+}
+
+.results-table .btn:hover .sparkle {
+    transform: scale(1.2);
+}
 }
