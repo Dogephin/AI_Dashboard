@@ -34,23 +34,71 @@ document.addEventListener('DOMContentLoaded', () => {
                     header.innerText = data.message;
                     container.appendChild(header);
 
+                    // ! New summary card design start
+                    const summaryCard = document.createElement('div');
+                    summaryCard.className = 'results-summary-container';
+                    container.appendChild(summaryCard);
+
+                    const stats = data.analysis;
+
+                    // Insert summary statistics
+                    summaryCard.innerHTML += `
+                        <div class="results-summary-container__result">
+                            <div class="heading-tertiary">Total Attempts</div>
+                            <div class="result-box">
+                                <div class="heading-primary">${stats.attempts}</div>
+                            </div>
+                        </div>
+                        <div class="results-summary-container__options">
+                            <div class="heading-secondary heading-secondary--blue">Summary</div>
+                            <div class="summary-result-options">
+                                <div class="result-option result-option-completedattempts">
+                                    <div class="icon-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00BD91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                    <span class="completedattempts-icon-text p-1">Completed Attempts</span>
+                                    </div>
+                                    <div class="result-box"><span>${stats.completed_attempts}</span> / ${stats.attempts}</div>
+                                </div>
+                                <div class="result-option result-option-failedattempts">
+                                    <div class="icon-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                    <span class="failedattempts-icon-text p-1">Failed Attempts</span>
+                                    </div>
+                                    <div class="result-box"><span>${stats.failed_attempts}</span> / ${stats.attempts}</div>
+                                </div>
+                                <div class="result-option result-option-averagescore">
+                                    <div class="icon-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9D00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2zM21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18"/></svg>
+                                    <span class="averagescore-icon-text p-1">Average Score</span>
+                                    </div>
+                                    <div class="result-box"><span>${stats.average_score}</span></div>
+                                </div>
+                                <div class="result-option result-option-minscore">
+                                    <div class="icon-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 17.2l-7.7-7.7-4 4-5.7-5.7"/><path d="M15 18h6v-6"/></svg>
+                                    <span class="minscore-icon-text p-1">Minimum Score</span>
+                                    </div>
+                                    <div class="result-box"><span>${stats.min_score}</span></div>
+                                </div>
+                                <div class="result-option result-option-maxscore">
+                                    <div class="icon-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"/><path d="M15 7h6v6"/></svg>
+                                    <span class="maxscore-icon-text p-1">Maximum Score</span>
+                                    </div>
+                                    <div class="result-box"><span>${stats.max_score}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    `
+                    // ! New summary card design end
+
+
 
                     // Create result card
                     const resultCard = document.createElement('div');
-                    resultCard.className = 'stats-card';
+                    resultCard.className = 'stats-card mt-4';
                     container.appendChild(resultCard);
-
-                    // Insert statistics
-                    const stats = data.analysis;
-                    resultCard.innerHTML += `
-                        <h5 class="mb-3">Game Attempt Summary</h5>
-                        <p><strong>Total Attempts: </strong>${stats.attempts}</p>
-                        <p><strong>Completed Attempts: </strong>${stats.completed_attempts}</p>
-                        <p><strong>Failed Attempts: </strong>${stats.failed_attempts}</p>
-                        <p><strong>Average Score: </strong>${stats.average_score}</p>
-                        <p><strong>Min Score: </strong>${stats.min_score}</p>
-                        <p><strong>Max Score: </strong>${stats.max_score}</p>
-                    `;
 
                     // Chart
                     const canvas = document.createElement('canvas');
