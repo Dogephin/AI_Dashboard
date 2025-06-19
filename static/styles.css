@@ -267,6 +267,7 @@ canvas {
     font-weight: 700;
     background-image: linear-gradient(to right, #00c6ff, #00d5ff);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     transform: scale(1.4);
 }
