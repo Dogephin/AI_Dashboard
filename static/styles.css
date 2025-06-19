@@ -1,7 +1,7 @@
 body {
     margin: 0;
-    background-color: #dddddd;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to bottom right, #e0eafc, #cfdef3, #f9fafc);
     color: #fff;
     display: flex;
     flex-direction: column;
@@ -10,14 +10,14 @@ body {
 
 /* Top tab / header */
 header {
-    background-color: #000000;
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 1.5rem;
+    background: #0b0c10;
+    color: #add8e6;
+    padding: 1.5rem 2rem;
+    font-size: 2rem;
     font-weight: bold;
     text-align: center;
-    user-select: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    letter-spacing: 1px;
 }
 
 /* Index CSS*/
@@ -26,24 +26,21 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 2rem;
+    gap: 2.5rem;
+    padding: 2rem;
+    flex-wrap: wrap;
 }
 
 .card {
-    background: #222;
-    border-radius: 12px;
-    width: 220px;
-    height: 220px;
+    width: 190px;
+    height: 254px;
+    background: #07182E;
+    position: relative;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    font-size: 1.8rem;
-    font-weight: bold;
-    user-select: none;
-    transition: background 0.3s, transform 0.3s;
-    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
-    color: #fff;
+    place-content: center;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 20px;
 }
 
 .card:hover {
@@ -52,7 +49,31 @@ header {
     box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3);
 }
 
+.card::before {
+    content: '';
+    position: absolute;
+    width: 100px;
+    background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
+    height: 130%;
+    animation: rotBGimg 3s linear infinite;
+    transition: all 0.2s linear;
+    z-index: 0;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    background: #07182E;
+    inset: 5px;
+    border-radius: 15px;
+    z-index: 1;
+}
+
 a.card {
+    z-index: 2;
+    position: relative;
+    color: white;
+    font-size: 2em;
     text-decoration: none;
     color: inherit;
     display: flex;
@@ -60,10 +81,30 @@ a.card {
     align-items: center;
 }
 
-a.card:hover {
-    background: #444;
-    transform: scale(1.05);
-    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3);
+@keyframes rotBGimg {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.card::before,
+.card::after {
+    pointer-events: none;
+}
+
+.card span {
+    z-index: 2;
+    position: relative;
+}
+
+.card:hover span h4 {
+    color: #66fcf1;
+    text-shadow: 0 0 8px rgba(102, 252, 241, 0.6);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 /* Overall Analysis CSS */

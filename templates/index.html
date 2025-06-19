@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Flask App</title>
+  <title>PacMeta Game Analysis Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 <body>
@@ -11,9 +11,9 @@
     Game Analysis Dashboard
   </header>
   <div class="container">
-    <a href="{{ url_for('overall') }}" class="card">Overall</a>
-    <a href="{{ url_for('session') }}" class="card">Session</a>
-    <a href="{{ url_for('user') }}" class="card">User</a>
+    <a href="{{ url_for('overall') }}" class="card"><span><h4>Overall</h4></span></a>
+    <a href="{{ url_for('session') }}" class="card"><span><h4>Session</h4></span></a>
+    <a href="{{ url_for('user') }}" class="card"><span><h4>User</h4></span></a>
   </div>
 </body>
 </html>
