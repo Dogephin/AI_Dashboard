@@ -114,44 +114,97 @@ document.addEventListener('DOMContentLoaded', () => {
                             labels: labels,
                             datasets: [
                                 {
-                                    type: 'line',
-                                    label: 'Score Trend (Line)',
+                                    type: 'bar',
+                                    label: 'Score per Attempt',
                                     data: scores,
-                                    fill: false,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
                                     borderColor: 'rgba(54, 162, 235, 1)',
-                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                    tension: 0.1,
-                                    order: 2
+                                    borderWidth: 1,
+                                    hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                    hoverBorderColor: 'rgba(54, 162, 235, 1)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.6,
+                                    datalabels: {
+                                        display: false
+                                    }
                                 },
                                 {
-                                    type: 'bar',
-                                    label: 'Score per Attempt (Bar)',
+                                    type: 'line',
+                                    label: 'Trend Line',
                                     data: scores,
-                                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    borderWidth: 1,
-                                    order: 1
+                                    fill: false,
+                                    borderColor: '#ff6384',
+                                    backgroundColor: '#ff6384',
+                                    tension: 0.3,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    datalabels: {
+                                        display: true,
+                                        anchor: 'end',
+                                        align: 'top',
+                                        formatter: Math.round,
+                                        font: {
+                                            weight: 'bold'
+                                        }
+                                    }
                                 }
                             ]
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 12,
+                                        padding: 15
+                                    }
+                                },
                                 tooltip: {
                                     mode: 'index',
-                                    intersect: false
+                                    intersect: false,
+                                    callbacks: {
+                                        label: context => `Score: ${context.parsed.y}`
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Score Trend Across Attempts',
+                                    font: {
+                                        size: 18
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 20
+                                    }
                                 }
                             },
                             scales: {
                                 x: {
-                                    title: { display: true, text: 'Attempt' }
+                                    title: {
+                                        display: true,
+                                        text: 'Attempt',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
                                 },
                                 y: {
-                                    title: { display: true, text: 'Score' },
-                                    beginAtZero: true
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Score',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
 
                     // Table

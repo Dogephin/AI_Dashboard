@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PacMeta Game Analysis Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PacMeta Game Analysis Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
+
 <body>
-  <header>
-    Game Analysis Dashboard
-  </header>
-  <div class="container">
-    <a href="{{ url_for('overall') }}" class="card"><span><h4>Overall</h4></span></a>
-    <a href="{{ url_for('session') }}" class="card"><span><h4>Session</h4></span></a>
-    <a href="{{ url_for('user') }}" class="card"><span><h4>User</h4></span></a>
-  </div>
+    <header>
+        Game Analysis Dashboard
+    </header>
+    <div class="container">
+        <a href="{{ url_for('overall') }}" class="card"><span>
+                <h4>Overall</h4>
+            </span></a>
+        <a href="{{ url_for('session') }}" class="card"><span>
+                <h4>Session</h4>
+            </span></a>
+        <a href="{{ url_for('user') }}" class="card"><span>
+                <h4>User</h4>
+            </span></a>
+    </div>
 </body>
+
 </html>
