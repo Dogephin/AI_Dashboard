@@ -18,42 +18,46 @@
     <div class="chart-card">
     <div class="chart-title">Error Frequency Over Time & Session Duration vs Score</div>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; align-items: flex-start;">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;">
 
       <!-- Bar Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
         <canvas id="avgScoreChart" width="600" height="300"></canvas>
-        <div class="insights-title">LLM Insights:</div>
-        <h3>Average Scores Analysis</h3>
+        <div class="insights-title">Average Scores Analysis Insights:</div>
         <div id="avg-scores-analysis">Loading...</div>
       </div>
 
       <!-- Error Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
         <canvas id="errorChart"></canvas>
-        <div class="insights-title">LLM Insights:</div>
-        <h3>Error Frequency Analysis</h3>
+        <div class="insights-title">Error Frequency Analysis Insights:</div>
         <div id="error-frequency-analysis">Loading...</div>
       </div>
 
-      <!-- Scatter Chart + Insight -->
-      <div style="flex: 1; min-width: 300px;">
-        <canvas id="scatterChart" width="600" height="300"></canvas>
-        <div class="insights-title">LLM Insights:</div>
-        <h3>Performance vs Duration</h3>
-        <div id="duration-analysis">Loading...</div>
-      </div>
 
     </div>
   </div>
-     <!-- Overall User analysis -->
-    <div class="chart-card">
-      <div class="chart-title">Overall User Analysis</div>
-      <div class="insights-title">LLM Insights:</div>
-      <h3>Overall User Insights</h3>
-      <div id="overall-user-analysis">Loading...</div>
+
+  <div class="chart-card">
+    <div class="chart-title">Error Frequency Over Time & Session Duration vs Score</div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;">
+
+      <!-- Scatter Chart + Insight -->
+    <div style="flex: 1; min-width: 300px;">
+      <canvas id="scatterChart" width="600" height="300"></canvas>
+      <div class="insights-title">Performance vs Duration Insights:</div>
+      <div id="duration-analysis">Loading...</div>
     </div>
 
+     <!-- Overall User analysis -->
+    <div style="flex: 1; min-width: 300px;">
+      <div class="chart-title">Overall User Analysis</div>
+      <div class="insights-title">Overall User Insights:</div>
+      <div id="overall-user-analysis">Loading...</div>
+    </div>
+    </div>
+  </div>
   </div>
 
   <!-- Data passed from Flask -->

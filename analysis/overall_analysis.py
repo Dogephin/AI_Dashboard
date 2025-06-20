@@ -10,9 +10,9 @@ from sqlalchemy import bindparam
 
 logger = logging.getLogger(__name__)
 
-# Error Frequency Over Time 
+# -- Error Frequency Over Time --
 def get_error_frequency_results():
-    query = text("SELECT results FROM PacMetaAOM.ima_plan_session_game_status")
+    query = text("SELECT results FROM sit_pacmeta.ima_plan_session_game_status")
 
     try:
         with engine.connect() as conn:
@@ -90,25 +90,13 @@ def error_frequency_analysis(results, client):
         ]
     )
 
-    analysis_response = response.choices[0].message.content
-    logger.info("Received analysis from LLM")
-    return analysis_response
+    insights_text = response.choices[0].message.content
+    cleaned_insights_frequency_score = clear_formatting(insights_text)
+    return cleaned_insights_frequency_score
 
-def extract_relevant_text(analysis_response):
-    match = re.search(r'(#### \*\*1\..*?)(?=#### \*\*Summary|\Z)', analysis_response, re.DOTALL)
-    if not match:
-        return "No insights available."
-
-    relevant_text = match.group(1)
-    relevant_text = re.sub(r'#+\s*', '', relevant_text)  # Remove markdown headers
-    relevant_text = re.sub(r'\*\*(.*?)\*\*', r'\1', relevant_text)  # Remove bold formatting
-    relevant_text = relevant_text.strip()
-
-    return relevant_text
-
-# Overall User Analysis
+# -- Overall User Analysis --
 def get_user_results():
-    query = text("SELECT User_ID , results FROM PacMetaAOM.ima_plan_session ORDER BY User_ID")
+    query = text("SELECT User_ID , results FROM sit_pacmeta.ima_plan_session ORDER BY User_ID")
 
     try:
         with engine.connect() as conn:
@@ -129,7 +117,8 @@ def overall_user_analysis(results2, client):
     {results2}
 
     Can you analyze this data and provide the analysis and insights. Please focus
-    on overall user analysis for everyone instead of individuals.
+    on overall user analysis for everyone instead of individuals. Please keep it short as possible with 4 key points and number them.
+    Ensure the content of each key point is in bullet points.  
 
     """
 
@@ -140,27 +129,16 @@ def overall_user_analysis(results2, client):
             {"role": "user", "content": prompt_text}
         ]
     )
-    
-    user_analysis = response.choices[0].message.content
-    return user_analysis
+    insights_text = response.choices[0].message.content
+    cleaned_insights_overall_score = clear_formatting(insights_text)
+    print("hello", cleaned_insights_overall_score)
+    return cleaned_insights_overall_score
 
-def extract_points_only(user_analysis):
-    match = re.search(r"(### 1\..*?)(?=### Recommendations|$)", user_analysis, re.DOTALL)
-    
-    if not match:
-        return "No key insights found."
-
-    good_info = match.group(1)
-    # Clean markdown formatting
-    good_info = re.sub(r'#+\s*', '', good_info)  # Remove heading markers like ###, ####
-    good_info = re.sub(r'\*\*(.*?)\*\*', r'\1', good_info)  # Remove bold formatting
-    return good_info.strip()
-
-# Session Duration vs Performance
+# -- Session Duration vs Performance --
 def get_duration_vs_errors():
     query = text("""
         SELECT game_start, game_end, score 
-        FROM PacMetaAOM.ima_plan_session_game_status
+        FROM sit_pacmeta.ima_plan_session_game_status
         WHERE game_start IS NOT NULL AND game_end IS NOT NULL AND score IS NOT NULL
     """)
     
@@ -203,9 +181,8 @@ def performance_vs_duration(data, client):
     Please analyze:
     - Is there a relationship between session duration and score?
     - Do longer sessions lead to higher scores?
-    - What is the ideal session length range, if observable?
 
-    Provide concise analysis with bullet points or numbered insights.
+    Provide concise and short analysis with bullet points or numbered insights.
     """
 
     response = client.chat.completions.create(
@@ -219,11 +196,11 @@ def performance_vs_duration(data, client):
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 
-# Average Scores for all Minigames
+# -- Average Scores for all Minigames --
 def get_practice_assessment_rows():
     query = text("""
         SELECT Session_ID, Results
-        FROM PacMetaAOM.ima_plan_session
+        FROM sit_pacmeta.ima_plan_session
         WHERE Results LIKE '%Practice%'
     """)
     try:
@@ -237,8 +214,6 @@ def get_practice_assessment_rows():
 
         session_ids = [s["Session_ID"] for s in sessions]
         scores = get_scores_for_sessions(session_ids)
-
-        print(f"[INFO] Retrieved {len(scores)} matching score entries.")
 
         scores_dict = {s["Session_ID"]: s for s in scores}
         for s in sessions:
@@ -263,7 +238,7 @@ def get_scores_for_sessions(session_ids):
 
     query = text("""
         SELECT Session_ID, score, results
-        FROM PacMetaAOM.ima_plan_session_game_status
+        FROM sit_pacmeta.ima_plan_session_game_status
         WHERE Session_ID IN :session_ids
     """).bindparams(bindparam("session_ids", expanding=True))
 
@@ -283,18 +258,15 @@ def calculate_avg_score_per_minigame(scores_rows):
 
     scores_by_minigame = defaultdict(list)
     max_score_by_minigame = {}
-    print(f"[INFO] Processing {len(scores_rows)} score rows for average calculation...")
 
     for row in scores_rows:
         try:
-            # Load JSON from string field
             data = json.loads(row['results'])
 
             raw_name = data.get('level_name') or data.get('game', '')
 
             cleaned_name = re.sub(r'<.*?>', '', raw_name).strip()
 
-            # Match pattern like "MG1 Practice", "MG2 Assessment"
             match = re.match(r'(MG\d+\s+(?:Practice))', cleaned_name)
             game_key = match.group(1) if match else cleaned_name
 
@@ -310,14 +282,10 @@ def calculate_avg_score_per_minigame(scores_rows):
         except Exception as e:
             print(f"[WARN] Skipping row due to error: {e}")
 
-    # Compute averages
     avg_scores = {
         game: sum(scores) / len(scores) if scores else 0
         for game, scores in scores_by_minigame.items()
     }
-
-    print(f"[INFO] Calculated average scores for {len(avg_scores)} minigames.")
-    print(f"[DEBUG] Example averages: {dict(list(avg_scores.items())[:3])}")
     return avg_scores, max_score_by_minigame
 
 
@@ -329,7 +297,6 @@ def get_avg_scores_for_practice_assessment():
     scores_rows = get_scores_for_sessions(session_ids)
     avg_scores, max_score_by_minigame = calculate_avg_score_per_minigame(scores_rows)
 
-    print(f"[RESULT] Final average scores: {avg_scores, max_score_by_minigame}")
     return avg_scores, max_score_by_minigame
 
 def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigame, client):
@@ -352,9 +319,8 @@ def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigam
     
     {formatted_data}
 
-    Please analyze the following:
+    Please analyze the following, keep it short:
     - Which minigames have the largest gaps between average and max scores?
-    - What might that suggest about difficulty or user performance?
     - Are there any games where performance is very close to the max score?
     - Provide clear, concise insights or bullet points that help stakeholders understand where users perform well or struggle.
 
@@ -375,17 +341,21 @@ def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigam
 
 def clear_formatting(response):
     relevant_text = response  
-
-    # Clean markdown headers like ### or ####
     relevant_text = re.sub(r'#+\s*', '', relevant_text)
-
-    # Remove bold formatting **bold**
     relevant_text = re.sub(r'\*\*(.*?)\*\*', r'\1', relevant_text)
-
-    # Optionally remove italic formatting *italic*
     relevant_text = re.sub(r'\*(.*?)\*', r'\1', relevant_text)
-
-    # Trim whitespace
     relevant_text = relevant_text.strip()
 
-    return relevant_text
+    final_points = parse_llm_insights(relevant_text)
+    return final_points
+
+def parse_llm_insights(response_text):
+    pattern = r'(\d+\.\s+[^\n]+)([\s\S]*?)(?=\n\d+\.|\Z)'
+    matches = re.findall(pattern, response_text)
+    
+    insights = []
+    for title_line, content in matches:
+        title = re.sub(r'^\d+\.\s+', '', title_line).strip()
+        content = content.strip()
+        insights.append({"title": title, "content": content})
+    return insights

@@ -18,10 +18,11 @@ def home():
 def api_avg_scores_analysis():
     avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()
     if not avg_scores:
-        return jsonify({"text": "No session duration data available."})
+        return jsonify([]) 
     
     text = oa.avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigame, llm_client)
-    return jsonify({"text": text})
+    return jsonify(text)  
+
 
 @app.route('/api/analysis/error-frequency')
 def api_error_frequency_analysis():
@@ -30,8 +31,8 @@ def api_error_frequency_analysis():
         return jsonify({"text": "No data found."})
     
     analysis_response = oa.error_frequency_analysis(results, llm_client)
-    text = oa.extract_relevant_text(analysis_response)
-    return jsonify({"text": text})
+    # text = oa.extract_relevant_text(analysis_response)
+    return jsonify(analysis_response) 
 
 @app.route('/api/analysis/performance-duration')
 def api_performance_duration_analysis():
@@ -40,7 +41,7 @@ def api_performance_duration_analysis():
         return jsonify({"text": "No session duration data available."})
     
     text = oa.performance_vs_duration(duration_data, llm_client)
-    return jsonify({"text": text})
+    return jsonify(text)
 
 @app.route('/api/analysis/overall-user')
 def api_overall_user_analysis():
@@ -48,9 +49,8 @@ def api_overall_user_analysis():
     if not results2:
         return jsonify({"text": "No user data available."})
     
-    raw_analysis = oa.overall_user_analysis(results2, llm_client)
-    text = oa.extract_points_only(raw_analysis)
-    return jsonify({"text": text})
+    text = oa.overall_user_analysis(results2, llm_client)
+    return jsonify(text)
 
 
 @app.route('/overall')
@@ -89,8 +89,8 @@ def overall():
             'datasets': []
         }
     else:
-        analysis_response = "Loading..."
-        analysis_text = oa.extract_relevant_text(analysis_response)
+        analysis_text = "Loading..."
+        # analysis_text = oa.extract_relevant_text(analysis_response)
 
         binned = oa.bin_errors_over_time(results, bin_size=5)
         time_bins = list(binned.keys())
