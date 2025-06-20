@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Table
                     const table = document.createElement('table');
-                    table.className = 'table table-bordered table-striped mt-5 results-table';
+                    table.className = 'table results-table mt-5';
                     const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
 
 

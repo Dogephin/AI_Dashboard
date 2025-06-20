@@ -192,6 +192,61 @@ canvas {
     margin-bottom: 1.5rem;
 }
 
+.results-table {
+    overflow: auto;
+    width: 100%;
+}
+
+.results-table table {
+    border: 1px solid #DEDEDF;
+    width: 100%;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.results-table thead th {
+    border: 1px solid #DEDEDF;
+    background-color: #6C7AE0;
+    text-align: center;
+    color: #FFFFFF;
+    padding: 5px;
+}
+
+.results-table thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.results-table thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.results-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+.results-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+.results-table td {
+    border: 1px solid #DEDEDF;
+    padding: 5px;
+}
+
+.results-table tr:nth-child(even) td {
+    background-color: #F8F6FF;
+    color: #000000;
+}
+
+.results-table tr:nth-child(odd) td {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
 .results-table .btn {
     border: none;
     padding: 6px 14px;
