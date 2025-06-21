@@ -176,6 +176,7 @@ canvas {
 }
 
 .insights-title {
+    color: black;
     font-size: 1.1rem;
     font-weight: bold;
     margin-top: 1.5rem;
@@ -190,6 +191,19 @@ canvas {
     white-space: pre-wrap;
     line-height: 1.6;
 }
+
+.insight-card {
+  background-color: black;
+  color: white;
+  padding: 10px;
+  margin-top: 0;
+  margin-bottom: 0.5rem; /* smaller, consistent spacing between cards */
+  border-radius: 8px;
+}
+.insight-card:last-child {
+  margin-bottom: 0; /* no gap after the last card */
+}
+
 
 /* User Analysis CSS */
 .selection-container {
