@@ -117,7 +117,7 @@ def overall_user_analysis(results2, client):
     {results2}
 
     Can you analyze this data and provide the analysis and insights. Please focus
-    on overall user analysis for everyone instead of individuals. Please keep it short as possible with 4 key points and number them.
+    on overall user analysis for everyone instead of individuals. Please keep it short and number them.
     Ensure the content of each key point is in bullet points.  
 
     """
@@ -181,6 +181,7 @@ def performance_vs_duration(data, client):
     Please analyze:
     - Is there a relationship between session duration and score?
     - Do longer sessions lead to higher scores?
+    - Can we suggest an optimal session length range for best performance?
 
     Provide concise and short analysis with bullet points or numbered insights.
     """
@@ -319,12 +320,21 @@ def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigam
     
     {formatted_data}
 
-    Please analyze the following, keep it short:
-    - Which minigames have the largest gaps between average and max scores?
-    - Are there any games where performance is very close to the max score?
-    - Provide clear, concise insights or bullet points that help stakeholders understand where users perform well or struggle.
+    Each entry includes:
+    - average_score: Mean score achieved by all users.
+    - max_score: Highest score achieved in any session.
 
-    Format the response as a list of insights.
+    Please analyze and provide concise insights in a numbered list, covering:
+
+    1. Performance Gaps: Which minigames have the largest gaps between average and max scores? What does this suggest about user challenges or skill ceilings?
+    2. Near-Optimal Games: Which minigames have averages close to their max? What might this indicate (e.g. game is easy, well-learned, or lacks depth)?
+    3. Consistency vs. Variability: Do any minigames suggest high variability in performance (e.g. wide average-to-max gap with low average)?
+    4. Skill Mastery Trends: What can you infer about skill progression or difficulty across the minigames?
+    5. Recommendations: Suggest actions based on your findings, including:
+    - Focus areas for future training.
+    - Potential design adjustments.
+        
+    Format the response as a list of insights, number each title accordingly. Please end your response immediately after giving the response to the above.
     """
 
     response = client.chat.completions.create(
@@ -336,6 +346,7 @@ def avg_scores_for_practice_assessment_analysis(avg_scores, max_score_by_minigam
     )
 
     insights_text = response.choices[0].message.content
+    print("average score one", insights_text)
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 

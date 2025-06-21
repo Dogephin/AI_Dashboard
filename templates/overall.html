@@ -6,6 +6,14 @@
   <title>Game Analysis Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/user_analysis.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   <style>
     
   </style>
@@ -28,49 +36,89 @@
   <div class="dashboard-container">
 
     <div class="chart-card">
-    <div class="chart-title">Error Frequency Over Time & Session Duration vs Score</div>
 
     <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;">
 
       <!-- Bar Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
+        <div class="chart-title">Average vs Max Score (All Minigames)</div>
         <canvas id="avgScoreChart" width="600" height="300"></canvas>
         <div class="insights-title">Average Scores Analysis Insights:</div>
-        <div id="avg-scores-analysis">Loading...</div>
+        <button class="btn analyze-btn" data-type="avg-scores" title="Analyze this row" id="overall-btn">
+            <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+            </svg>
+            <span class="text">Generate</span>
+        </button>
       </div>
 
       <!-- Error Chart + Insight -->
       <div style="flex: 1; min-width: 300px;">
+        <div class="chart-title">Error Frequency Over Time</div>
         <canvas id="errorChart"></canvas>
         <div class="insights-title">Error Frequency Analysis Insights:</div>
-        <div id="error-frequency-analysis">Loading...</div>
+        <button class="btn analyze-btn" data-type="error-frequency" title="Analyze this row" id="overall-btn">
+            <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+            </svg>
+            <span class="text">Generate</span>
+        </button>
       </div>
-
-
     </div>
   </div>
 
   <div class="chart-card">
-    <div class="chart-title">Error Frequency Over Time & Session Duration vs Score</div>
 
     <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;">
 
       <!-- Scatter Chart + Insight -->
     <div style="flex: 1; min-width: 300px;">
+      <div class="chart-title">Performance vs Duration</div>
       <canvas id="scatterChart" width="600" height="300"></canvas>
       <div class="insights-title">Performance vs Duration Insights:</div>
-      <div id="duration-analysis">Loading...</div>
+      <button class="btn analyze-btn" data-type="performance-duration" title="Analyze this row" id="overall-btn">
+            <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+            </svg>
+            <span class="text">Generate</span>
+        </button>
     </div>
 
      <!-- Overall User analysis -->
     <div style="flex: 1; min-width: 300px;">
       <div class="chart-title">Overall User Analysis</div>
-      <div class="insights-title">Overall User Insights:</div>
-      <div id="overall-user-analysis">Loading...</div>
+      <button class="btn analyze-btn" data-type="overall-user" title="Analyze this row" id="overall-btn">
+            <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+            </svg>
+            <span class="text">Generate</span>
+        </button>
     </div>
     </div>
   </div>
   </div>
+  <!-- Modal for AI Analysis -->
+    <div class="modal fade" id="aiAnalysisModal" tabindex="-1" aria-labelledby="aiAnalysisModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aiAnalysisModalLabel">AI Performance Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="ai-analysis-content">
+                    <p id="ai-loading-text">Analyzing performance... please wait.</p>
+                    <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-3">Analyzing performance... please wait.</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
 
   <!-- Data passed from Flask -->
   <script>
@@ -80,6 +128,6 @@
   </script>
   
   <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/overall_loadbalancing.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/overall_analysis.js') }}"></script>
 </body>
 </html>
