@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # -- Error Frequency Over Time --
 def get_error_frequency_results():
-    query = text("SELECT results FROM sit_pacmeta.ima_plan_session_game_status")
+    query = text("SELECT results FROM ima_plan_session_game_status")
 
     try:
         with engine.connect() as conn:
@@ -96,7 +96,7 @@ def error_frequency_analysis(results, client):
 
 # -- Overall User Analysis --
 def get_user_results():
-    query = text("SELECT User_ID , results FROM sit_pacmeta.ima_plan_session ORDER BY User_ID")
+    query = text("SELECT User_ID , results FROM ima_plan_session ORDER BY User_ID")
 
     try:
         with engine.connect() as conn:
@@ -138,7 +138,7 @@ def overall_user_analysis(results2, client):
 def get_duration_vs_errors():
     query = text("""
         SELECT game_start, game_end, score 
-        FROM sit_pacmeta.ima_plan_session_game_status
+        FROM ima_plan_session_game_status
         WHERE game_start IS NOT NULL AND game_end IS NOT NULL AND score IS NOT NULL
     """)
     
@@ -201,7 +201,7 @@ def performance_vs_duration(data, client):
 def get_practice_assessment_rows():
     query = text("""
         SELECT Session_ID, Results
-        FROM sit_pacmeta.ima_plan_session
+        FROM ima_plan_session
         WHERE Results LIKE '%Practice%'
     """)
     try:
@@ -239,7 +239,7 @@ def get_scores_for_sessions(session_ids):
 
     query = text("""
         SELECT Session_ID, score, results
-        FROM sit_pacmeta.ima_plan_session_game_status
+        FROM ima_plan_session_game_status
         WHERE Session_ID IN :session_ids
     """).bindparams(bindparam("session_ids", expanding=True))
 
