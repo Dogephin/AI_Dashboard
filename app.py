@@ -160,18 +160,29 @@ def user():
             # Handle main form
             user_id = payload.get('user_id')
             game_id = payload.get('game_id')
-            results = ua.get_user_game_results(user_id, game_id)
 
-            if not results:
-                return jsonify({"status": "error", "message": "No gameplay records were found for the selected user and game."})
-            else:
-                analysis = ua.analyze_results(results)
+            # Check if user_id is not empty, but game_id is empty
+            if user_id and (not game_id or str(game_id).strip() == ""):
+                results = ua.fetch_user_errors(user_id)
                 return jsonify({
-                    "status": "success",
-                    "message": "Gameplay records retrieved for the selected user and game are displayed below.",
-                    "results": results,
-                    "analysis": analysis
-                })
+                        "status": "success",
+                        "message": "Gameplay records retrieved for the selected user and game are displayed below.",
+                        "results": results
+                    })
+
+            else:
+                results = ua.get_user_game_results(user_id, game_id)
+
+                if not results:
+                    return jsonify({"status": "error", "message": "No gameplay records were found for the selected user and game."})
+                else:
+                    analysis = ua.analyze_results(results)
+                    return jsonify({
+                        "status": "success",
+                        "message": "Gameplay records retrieved for the selected user and game are displayed below.",
+                        "results": results,
+                        "analysis": analysis
+                    })
 
         elif 'row_analysis' in payload:
             # Handle row analysis
@@ -188,6 +199,14 @@ def user():
             return jsonify({"status": "error", "message": "Invalid POST payload."})
 
     return render_template('user.html', users=users, games=games)
+
+@app.route('/generate-ai-prompt', methods=['POST'])
+def mistakes():
+    data = request.get_json() 
+    items = data.get('items', [])
+    mistake_categories = ua.categorize_mistakes(items , llm_client)
+    return jsonify({"message": "AI Categorization Completed.", "Categories": mistake_categories})
+
 
 
 if __name__ == '__main__':

@@ -498,3 +498,118 @@ canvas {
 .results-summary-container .icon:hover {
     filter: grayscale(0);
 }
+
+
+.result-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 25px;
+  padding: 20px 25px;
+}
+
+.result-section h3 {
+  margin-top: 0;
+  border-bottom: 2px solid #007BFF;
+  padding-bottom: 8px;
+  color: #007BFF;
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-section ul {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 15px;
+}
+
+.result-section li {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-left: 5px solid transparent;
+  border-radius: 4px;
+  background: #f9f9f9;
+  cursor: default;
+  transition: background 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-section li:hover {
+  background: #e9f5ff;
+}
+
+.result-section li .badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: white;
+  text-transform: uppercase;
+}
+
+.toggle-btn {
+    margin-top: 0.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+}
+
+.toggle-btn:hover {
+    background: #0056b3;
+}
+
+.ai-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.ai-btn:hover {
+    background-color: #0056b3;
+}
+
+.ai-output {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 5px;
+}
+
+.ai-generated-box pre {
+    background-color: #eef1f4;
+    padding: 10px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+}
+
+.hidden {
+    display: none;
+}
