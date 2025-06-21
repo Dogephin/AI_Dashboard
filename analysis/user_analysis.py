@@ -41,6 +41,15 @@ def get_list_of_games():
         with engine.connect() as conn:
             result = conn.execute(query)
             games = [dict(row._mapping) for row in result.fetchall()]
+
+        # Add a custom row at the bottom for overall mistake analysis
+        custom_row = {
+            'Level_ID': '',
+            'Game_ID': '',
+            'Name': 'Overall Mistakes',
+            'Plan_Game_ID': ''
+        }
+        games.append(custom_row)
         logger.info(f"Fetched {len(games)} unique games from the database.")
         return games
     except Exception as e:
@@ -172,3 +181,100 @@ def response_cleanup(response):
     response = re.sub(r'\n{3,}', '\n\n', response)
 
     return response.strip()
+
+def trim_first_and_last_line(text: str) -> str:
+    lines = text.strip().splitlines()
+    if len(lines) <= 2:
+        return ""  # Not enough content to trim
+    trimmed = "\n".join(lines[1:-1])
+    return trimmed.strip()
+
+# Deduplication helper
+def deduplicate(entries):
+    seen = set()
+    result = []
+    for entry in entries:
+        key = (entry.get("text"), entry.get("type"))
+        if key not in seen:
+            seen.add(key)
+            result.append({"text": entry.get("text"), "type": entry.get("type")})
+    return result
+
+def fetch_user_errors(user_id):
+    query = text("""
+        SELECT GS.results
+        FROM ima_plan_session_game_status AS GS
+        INNER JOIN ima_plan_session AS PS ON GS.Session_ID = PS.Session_ID
+        WHERE PS.User_ID = :user_id;
+    """)
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query, {"user_id": user_id})
+            rows = result.fetchall()
+
+        # Storage for all error categories
+        all_imprecision, all_warning, all_minor, all_severe = [], [], [], []
+
+        for row in rows:
+            raw = row[0]
+            if raw is None:
+                continue
+
+            try:
+                data = json.loads(raw)
+                all_imprecision.extend(data.get("errors", {}).get("imprecision", []))
+                all_warning.extend(data.get("errors", {}).get("warning", []))
+                all_minor.extend(data.get("errors", {}).get("minor", []))
+                all_severe.extend(data.get("errors", {}).get("severe", []))
+            except json.JSONDecodeError as e:
+                logger.warning(f"Skipping invalid JSON: {e}")
+
+        # Deduplicate results
+        all_imprecision = deduplicate(all_imprecision)
+        all_warning = deduplicate(all_warning)
+        all_minor = deduplicate(all_minor)
+        all_severe = deduplicate(all_severe)
+
+        return {
+            "imprecision": all_imprecision,
+            "warning": all_warning,
+            "minor": all_minor,
+            "severe": all_severe
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to fetch user errors for user {user_id}: {e}")
+        return {
+            "imprecision": [],
+            "warning": [],
+            "minor": [],
+            "severe": []
+        }
+
+
+def categorize_mistakes(errors , client):
+    prompt_text = f"""
+    The data below shows the text and types of errors that a user has made:
+
+    {errors}
+
+    Please help to categorize these errors according to their texts 
+    and provide any recommendations on what the user can do to reduce making these errors in the game
+    assuming you can't change how the game works if possible
+
+    Ensure that the texts are kept exactly the same
+    """
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": "You are a data analyst."},
+            {"role": "user", "content": prompt_text}
+        ]
+    )
+    
+    raw_output = response.choices[0].message.content
+    cleaned_ouput = response_cleanup(raw_output)
+    final_output = trim_first_and_last_line(cleaned_ouput)
+
+    return final_output
