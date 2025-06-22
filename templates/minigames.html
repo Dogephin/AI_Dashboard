@@ -3,27 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Analysis Dashboard</title>
+  <title>Game Analysis Dashboard – Minigames</title>
+
+  <!-- your global stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+
+  <!-- Chart.js is still available if you need it later -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- --- Tiny page-specific styles --- -->
   <style>
-    
+    /* simple responsive grid */
+    #gamesGrid{
+      --gap:1rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:var(--gap);
+      margin:1.5rem auto;
+      max-width:1200px;
+      padding:0 var(--gap);
+    }
+    .game-card{
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 2px 4px rgba(0,0,0,.08);
+      padding:1rem 1.25rem;
+      transition:transform .15s ease, box-shadow .15s ease;
+      cursor:pointer;
+      text-decoration:none;
+      color:inherit;
+    }
+    .game-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 6px 16px rgba(0,0,0,.12);
+    }
+    .game-card h2{font-size:1.05rem;margin:0 0 .25rem;font-weight:600}
+    .game-card p{font-size:.9rem;margin:0;color:#555}
   </style>
 </head>
+
+<script src="{{ url_for('static', filename='js/minigames_analysis.js') }}"></script>
+
 <body>
   <header>
     <div class="header-content">
-      <button id="back-button" onclick="window.location.href='/';">
+      <button id="back-button" onclick="window.location.href='/'">
+        <!-- (same SVG arrow as before) -->
         <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-          <path
-            d="M874.690416 495.52477c0 11.2973-9.168824 20.466124-20.466124 20.466124l-604.773963 0 188.083679 188.083679c7.992021 7.992021 7.992021 20.947078 0 28.939099-4.001127 3.990894-9.240455 5.996574-14.46955 5.996574-5.239328 0-10.478655-1.995447-14.479783-5.996574l-223.00912-223.00912c-3.837398-3.837398-5.996574-9.046027-5.996574-14.46955 0-5.433756 2.159176-10.632151 5.996574-14.46955l223.019353-223.029586c7.992021-7.992021 20.957311-7.992021 28.949332 0 7.992021 8.002254 7.992021 20.957311 0 28.949332l-188.073446 188.073446 604.753497 0C865.521592 475.058646 874.690416 484.217237 874.690416 495.52477z">
-          </path>
+          <path d="M874.69 495.52c0 11.3-9.17 20.47-20.47 20.47H249.44l188.08 188.08c7.99 7.99 7.99 20.95 0 28.94-4 3.99-9.24 5.99-14.47 5.99-5.24 0-10.48-2-14.48-5.99L185.51 509.97c-3.84-3.84-5.99-9.05-5.99-14.47 0-5.43 2.16-10.63 5.99-14.47l223.02-223.03c7.99-7.99 20.96-7.99 28.95 0 7.99 8 7.99 20.96 0 28.95L249.43 475.06h604.79c11.3 0 20.47 9.16 20.47 20.46z"/>
         </svg>
         <span>Back</span>
       </button>
-      <div class="header-title">Game Analysis Dashboard - Minigames</div>
+      <div class="header-title">Game Analysis Dashboard – Minigames</div>
     </div>
   </header>
 
+  <!-- grid is filled by JS -->
+  <section id="gamesGrid"></section>
+
+  <script>
+    async function fetchMinigames() {
+      try {
+        const res = await fetch('/api/minigames');
+        if (!res.ok) throw new Error('network');
+        return await res.json();
+      } catch (err) {
+        console.warn('Falling back to demo data:', err);
+        return [
+          { id: 1, name: 'MG1 – Verify Docs', description: 'Review patient information and verify documents.' },
+          { id: 2, name: 'MG2 – Dispense Medicine', description: 'Accurately dispense the correct drugs.' },
+          { id: 3, name: 'MG3 – Confirm ID', description: 'Match patient to their prescription with an ID check.' }
+        ];
+      }
+    }
+
+    function createCard(g){
+      // link could go to e.g. `/analysis/minigame/${g.id}`
+      const a = document.createElement('a');
+      a.href = `#minigame-${g.id}`;
+      a.className = 'game-card';
+      a.innerHTML = `<h2>${g.name}</h2><p>${g.description ?? ''}</p>`;
+      return a;
+    }
+
+    async function init(){
+      const games = await fetchMinigames();
+      const grid  = document.getElementById('gamesGrid');
+      games.forEach(g => grid.appendChild(createCard(g)));
+    }
+    init();
+  </script>
 </body>
 </html>
