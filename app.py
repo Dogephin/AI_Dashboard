@@ -142,9 +142,9 @@ def overall():
                            avg_score_chart_data=avg_score_chart_data,
                             avg_scores_analysis=avg_scores_analysis)
 
-@app.route('/session')
-def session():
-    return render_template('session.html')
+@app.route('/minigames')
+def minigames():
+    return render_template('minigames.html')
 
 
 
