@@ -30,12 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 else if (data.status === 'success') {
                     if ('analysis' in data) {
-                                                const header = document.createElement('div');
+                        const header = document.createElement('div');
                         header.className = 'alert alert-success';
                         header.innerText = data.message;
                         container.appendChild(header);
 
-                        // ! New summary card design start
                         const summaryCard = document.createElement('div');
                         summaryCard.className = 'results-summary-container';
                         container.appendChild(summaryCard);
@@ -92,9 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             </div>
                         `
-                        // ! New summary card design end
-
-
 
                         // Create result card
                         const resultCard = document.createElement('div');
@@ -208,9 +204,53 @@ document.addEventListener('DOMContentLoaded', () => {
                             plugins: [ChartDataLabels]
                         });
 
+                        const fullAnalysisBtn = document.createElement('button');
+                        fullAnalysisBtn.className = 'btn overall-analysis-btn mt-4 d-block mx-auto';
+                        fullAnalysisBtn.innerHTML = `
+                            <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                                <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+                            </svg>
+                            <span class="text">Generate Overall AI Analysis</span>
+                            `;
+                        container.appendChild(fullAnalysisBtn);
+
+                        fullAnalysisBtn.addEventListener('click', () => {
+                            const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+                            const modalContent = document.getElementById('ai-analysis-content');
+                            modalContent.innerHTML = `
+                            <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-3">Analyzing all attempts... please wait.</div>
+                            </div>
+                        `;
+                            modal.show();
+
+                            fetch('/user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ bulk_analysis: rowDataArray }) // send all attempt rows
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    const result = data.analysis || data.message || 'No analysis result.';
+                                    const markdownHtml = marked.parse(result);
+                                    modalContent.innerHTML = `
+                                    <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                        ${markdownHtml}
+                                    </div>
+                                `;
+                                })
+                                .catch(err => {
+                                    console.error('Bulk analysis error:', err);
+                                    modalContent.innerHTML = `<p class="text-danger">An error occurred during bulk analysis.</p>`;
+                                });
+                        });
+
                         // Table
                         const table = document.createElement('table');
-                        table.className = 'table results-table mt-5';
+                        table.className = 'table results-table mt-3';
                         const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
 
 
@@ -334,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         });
                     }
-                    else{
+                    else {
                         const sections = [
                             { title: "Imprecision Mistakes", id: "imprecision", data: data.results.imprecision },
                             { title: "Warnings Mistakes ", id: "warnings", data: data.results.warning },
@@ -373,20 +413,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                             items: section.data
                                         })
                                     })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        console.log(data)
-                                        aiOutputDiv.innerHTML = `
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            console.log(data)
+                                            aiOutputDiv.innerHTML = `
                                             <div class="ai-generated-box">
                                                 <h4>Error Categories</h4>
                                                 <pre>${data.Categories || 'No prompt generated.'}</pre>
                                             </div>
                                         `;
-                                    })
-                                    .catch(error => {
-                                        console.error('Error generating content:', error);
-                                        aiOutputDiv.innerHTML = `<div class="error">Failed to generate content.</div>`;
-                                    });
+                                        })
+                                        .catch(error => {
+                                            console.error('Error generating content:', error);
+                                            aiOutputDiv.innerHTML = `<div class="error">Failed to generate content.</div>`;
+                                        });
                                 });
 
                                 headerWrapper.appendChild(header);
@@ -434,9 +474,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 container.appendChild(sectionDiv);
                             }
                         });
-                        }
                     }
-                })
-        .catch(error => console.error('Error:', error));
+                }
+            })
+            .catch(error => console.error('Error:', error));
     });
 });

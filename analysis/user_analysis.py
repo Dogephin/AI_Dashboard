@@ -151,6 +151,66 @@ def analyze_single_attempt(results, client):
     analysis = response.choices[0].message.content
     return analysis
 
+def analyze_multiple_attempts(results, client):
+    
+    summarized_attempts = []
+    
+    for attempt in results:
+        try:
+            raw = json.loads(attempt.get("Overall_Results", "{}"))
+        except json.JSONDecodeError:
+            continue
+    
+        summarized_attempts.append({
+            "Start": attempt.get("Game_Start"),
+            "End": attempt.get("Game_End"),
+            "Status": attempt.get("Status"),
+            "Final Score": raw.get("final-score", 0),
+            "Accuracy (%)": raw.get("accuracy", 0),
+            "Duration (s)": round(raw.get("total-time", 0), 2),
+            "Minor Errors": raw.get("minor-count", 0),
+            "Warnings": raw.get("warning-count", 0),
+            "Severe Errors": raw.get("severe-count", 0),
+            "Good Actions": len(raw.get("errors", {}).get("good", [])),
+            "Minor Actions": len(raw.get("errors", {}).get("minor", [])),
+            "Warning Actions": len(raw.get("errors", {}).get("warning", [])),
+            "Severe Actions": len(raw.get("errors", {}).get("severe", [])),
+        })
+        
+        # If more than 20 attempts, summarize to the first 20
+        if len(summarized_attempts) > 20:
+            summarized_attempts = summarized_attempts[:20]
+    
+    prompt_text = f"""
+    You are an expert training analyst. Below is a JSON list of gameplay attempts for a training module by the same user. 
+    Each object contains the attempt's status, start and end time, final score, and a result field with detailed breakdown.
+
+    Please analyze the entire dataset holistically by:
+    1. Identify performance trends across attempts (improving, stable, declining).
+    2. Highlight common patterns: error types, durations, success rates.
+    3. Compare successful and failed attempts — what distinguishes them?
+    4. Pinpoint what the user struggles with consistently.
+    5. Provide improvement suggestions tailored to repeated weaknesses.
+    6. Recognize strengths and highlight consistent good practices.
+    7. End with a summary of the user's overall progress and training readiness.
+
+    Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
+    No overall title is needed, just start with the main paragraphs and its headings.
+
+    JSON Data:
+    {json.dumps(summarized_attempts, indent=2)}
+    """
+
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": "You are a gameplay data analyst."},
+            {"role": "user", "content": prompt_text}
+        ]
+    )
+
+    return response.choices[0].message.content
+
 def response_cleanup(response):
     # Remove bold and italic (e.g., **text**, *text*, __text__, _text_)
     response = re.sub(r'(\*\*|__)(.*?)\1', r'\2', response)

@@ -286,7 +286,8 @@ canvas {
     color: #000000;
 }
 
-.results-table .btn {
+.btn.analyze-btn,
+.btn.overall-analysis-btn {
     border: none;
     padding: 6px 14px;
     border-radius: 20px;
@@ -301,10 +302,17 @@ canvas {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.results-table .sparkle {
+.btn.analyze-btn .sparkle {
     fill: white;
     width: 16px;
     height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.btn.overall-analysis-btn .sparkle {
+    fill: white;
+    width: 18px;
+    height: 18px;
     transition: transform 0.3s ease;
 }
 
@@ -314,23 +322,37 @@ canvas {
     font-size: medium;
 }
 
-.results-table .btn .text {
+.btn.analyze-btn .text,
+.btn.overall-analysis-btn .text {
     color: white;
     font-weight: 600;
 }
 
-.results-table .btn:hover {
+.btn.analyze-btn:hover,
+.btn.overall-analysis-btn:hover {
     background: #354ee2;
     transform: translateY(-1px);
 }
 
-.results-table .btn:hover .text {
+.btn.analyze-btn:hover .text,
+.btn.overall-analysis-btn:hover .text {
     color: #eaf4ff;
 }
 
-.results-table .btn:hover .sparkle {
+.btn.analyze-btn:hover .sparkle,
+.btn.overall-analysis-btn:hover .sparkle {
     transform: scale(1.2);
 }
+
+.btn.overall-analysis-btn {
+    background: #198754;
+    font-size: 1rem;
+}
+
+.btn.overall-analysis-btn:hover {
+    background: #14532d;
+}
+
 
 .results-summary-container {
     margin: 2rem auto;

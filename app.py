@@ -4,6 +4,8 @@ from db import test_db_connection
 from analysis import overall_analysis as oa
 from analysis import user_analysis as ua
 import logging
+import json
+import datetime
 
 app = Flask(__name__)
 
@@ -155,6 +157,10 @@ def user():
 
     if request.method == 'POST':
         payload = request.get_json()
+        
+        # ? For debugging, can remove this later
+        # print("\nReceived POST payload:\n")
+        # print(payload)
 
         if 'user_id' in payload and 'game_id' in payload:
             # Handle main form
@@ -187,13 +193,37 @@ def user():
         elif 'row_analysis' in payload:
             # Handle row analysis
             row_data = payload['row_analysis']
+            
+            # ? For debugging, can remove this later
             # print("\nAnalyzing individual row:\n")
-            # print(row_data) # print out for debugging
+            # print(row_data)
             # single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client)) # with cleanup
+            
             single_attempt_analysis_response = ua.analyze_single_attempt(row_data, llm_client)
+            
+            # ? For debugging, can remove this later
             # print("\nSingle attempt analysis response:\n")
             # print(single_attempt_analysis_response)
-            return jsonify({"message": "AI Analysis Completed.", "analysis": single_attempt_analysis_response})
+            
+            return jsonify({
+                "message": "AI Analysis Completed.", 
+                "analysis": single_attempt_analysis_response
+            })
+
+        elif 'bulk_analysis' in payload:
+            all_attempts = payload['bulk_analysis']
+            
+            # ? For debugging, save the attempts to a file wth a timestamp
+            # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            # all_attempts_filename = f'all_attempts_{timestamp}.json'
+            # with open(all_attempts_filename, 'w') as f:
+            #     json.dump(all_attempts, f, indent=4)
+            
+            bulk_analysis = ua.analyze_multiple_attempts(all_attempts, llm_client)
+            return jsonify({
+                "message": "AI Analysis for all attempts completed.",
+                "analysis": bulk_analysis
+            })
 
         else:
             return jsonify({"status": "error", "message": "Invalid POST payload."})
