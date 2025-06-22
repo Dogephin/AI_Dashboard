@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const userId = userSelect.value;
         const gameId = gameSelect.value;
 
+        const userName = userSelect.options[userSelect.selectedIndex].textContent.trim();
+        const gameName = gameSelect.options[gameSelect.selectedIndex].textContent.trim();
+
         fetch('/user', {
             method: 'POST',
             headers: {
@@ -215,6 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         container.appendChild(fullAnalysisBtn);
 
                         fullAnalysisBtn.addEventListener('click', () => {
+                            const downloadBtn = document.getElementById('btn-download-analysis');
+                            if (downloadBtn) {
+                                downloadBtn.classList.add('d-none');  // Hide download button initially
+                            }
                             const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
                             const modalContent = document.getElementById('ai-analysis-content');
                             modalContent.innerHTML = `
@@ -241,6 +248,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                         ${markdownHtml}
                                     </div>
                                 `;
+                                    // Enable download button
+                                    const downloadBtn = document.getElementById('btn-download-analysis');
+                                    if (downloadBtn) {
+                                        if (result && result.trim() !== '') {
+                                            downloadBtn.classList.remove('d-none');  // Show button
+                                            downloadBtn.onclick = () => {
+                                                const blob = new Blob([result], { type: 'text/plain' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                const fileName = "[" + gameName + "] - AI_ANALYSIS_FOR_ALL_ATTEMPTS - USER " + userId + ".txt";
+                                                a.href = url;
+                                                a.download = fileName;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(url);
+                                            };
+                                        } else {
+                                            downloadBtn.classList.add('d-none');  // Hide if empty
+                                        }
+                                    }
                                 })
                                 .catch(err => {
                                     console.error('Bulk analysis error:', err);
@@ -334,8 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Attach analyze button click handlers
                         document.querySelectorAll('.analyze-btn').forEach(btn => {
                             btn.addEventListener('click', () => {
+                                const downloadBtn = document.getElementById('btn-download-analysis');
+                                if (downloadBtn) {
+                                    downloadBtn.classList.add('d-none');  // Hide download button initially
+                                }
                                 const index = parseInt(btn.getAttribute('data-index'));
                                 const rowData = rowDataArray[index];
+                                const fileName = "[" + gameName + "] - AI_ANALYSIS_FOR_ATTEMPT_" + (index + 1) + " - USER " + userId + ".txt";
 
                                 // Show modal with loading message
                                 const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
@@ -366,6 +399,26 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 ${markdownHtml}
                                             </div>
                                         `;
+                                        // Enable download button
+                                        const downloadBtn = document.getElementById('btn-download-analysis');
+                                        if (downloadBtn) {
+                                            if (result && result.trim() !== '') {
+                                                downloadBtn.classList.remove('d-none');  // Show button
+                                                downloadBtn.onclick = () => {
+                                                    const blob = new Blob([result], { type: 'text/plain' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = fileName;
+                                                    document.body.appendChild(a);
+                                                    a.click();
+                                                    document.body.removeChild(a);
+                                                    URL.revokeObjectURL(url);
+                                                };
+                                            } else {
+                                                downloadBtn.classList.add('d-none');  // Hide if empty
+                                            }
+                                        }
                                     })
                                     .catch(err => {
                                         console.error('Analysis error:', err);
