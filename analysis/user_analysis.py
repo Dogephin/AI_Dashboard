@@ -83,13 +83,54 @@ def get_user_game_results(user_id, game_id):
         return []
 
 
-def analyze_results(results):
-    all_scores = [r["Score"] for r in results]
+def get_user_all_games_results(user_id):
+    """
+    Get all games played by a specific user across all minigames
+    Reuses existing query logic but for all games
+    """
+    query = text("""
+        SELECT
+        pg.Level as Level_ID,
+        igl.Name as Game_Name,
+        psgs.Status, 
+        psgs.Game_Start, 
+        psgs.Game_End, 
+        psgs.Score, 
+        psgs.Results AS "Overall_Results"
+        FROM ima_plan_session as ps
+        JOIN ima_plan_session_game_status as psgs ON ps.Session_ID = psgs.Session_ID
+        JOIN ima_plan_game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+        JOIN ima_game_level as igl ON pg.Level = igl.Level_ID
+        WHERE ps.User_ID = :user_id
+        ORDER BY igl.Name, psgs.Game_Start
+    """)
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query, {"user_id": user_id})
+            rows = result.fetchall()
+
+        results = [dict(row._mapping) for row in rows]
+        logger.info(f"Fetched {len(results)} total game results for user {user_id}")
+        return results
+    except Exception as e:
+        logger.error(f"Failed to fetch all game results for user {user_id}: {e}")
+        return []
+
+def analyze_results(results, analysis_type="single_game"):
+    """
+    Extended existing analyze_results function to handle both single game and overall assessment
+    """
+    if analysis_type == "overall_assessment":
+        return analyze_overall_assessment(results)
+    
+    # Existing single game analysis
+    all_scores = [r["Score"] for r in results if r["Score"] is not None]
     completed = [r for r in results if r["Status"] == "complete"]
     failed = [r for r in results if r["Status"] == "fail"]
 
     # Create a trend based on order of attempts
-    score_trend = [{"Attempt": f"Attempt {i+1}", "Score": r["Score"]} for i, r in enumerate(results)]
+    score_trend = [{"Attempt": f"Attempt {i+1}", "Score": r["Score"]} for i, r in enumerate(results) if r["Score"] is not None]
 
     return {
         "attempts": len(results),
@@ -101,6 +142,58 @@ def analyze_results(results):
         "trend": score_trend
     }
 
+def analyze_overall_assessment(results):
+    """
+    Analyze results for overall assessment across all minigames
+    """
+    from collections import defaultdict
+    import re
+    
+    # Group results by game
+    games_data = defaultdict(list)
+    
+    for result in results:
+        if result.get('Score') is not None:
+            # Clean game name
+            game_name = re.sub(r'<.*?>', '', result.get('Game_Name', '')).strip()
+            games_data[game_name].append({
+                'score': result['Score'],
+                'status': result['Status']
+            })
+    
+    # Calculate stats per game
+    game_stats = []
+    for game_name, game_results in games_data.items():
+        scores = [r['score'] for r in game_results if r['score'] is not None]
+        if scores:
+            game_stats.append({
+                'game_name': game_name,
+                'average_score': round(mean(scores), 2),
+                'total_attempts': len(game_results),
+                'min_score': min(scores),
+                'max_score': max(scores),
+                'completed': len([r for r in game_results if r['status'] == 'complete'])
+            })
+    
+    # Sort by average score (lowest to highest)
+    game_stats.sort(key=lambda x: x['average_score'])
+    
+    return {
+        "analysis_type": "overall_assessment",
+        "total_games": len(game_stats),
+        "overall_average": round(mean([stat['average_score'] for stat in game_stats]), 2) if game_stats else 0,
+        "game_stats": game_stats,
+        "chart_data": {
+            'labels': [stat['game_name'] for stat in game_stats],
+            'datasets': [{
+                'label': 'Average Score',
+                'data': [stat['average_score'] for stat in game_stats],
+                'backgroundColor': 'rgba(54, 162, 235, 0.6)',
+                'borderColor': 'rgba(54, 162, 235, 1)',
+                'borderWidth': 1
+            }]
+        }
+    }
 
 def analyze_single_attempt(results, client):
 

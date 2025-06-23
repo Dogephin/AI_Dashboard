@@ -226,7 +226,19 @@ def user():
                         "message": "Gameplay records retrieved for the selected user and game are displayed below.",
                         "results": results
                     })
-
+            # Handle "Overall Assessment" selection 
+            elif user_id and game_id == "overall_assessment":
+                results = ua.get_user_all_games_results(user_id)
+                if not results:
+                    return jsonify({"status": "error", "message": "No gameplay records were found for the selected user."})
+                else:
+                    analysis = ua.analyze_results(results, analysis_type="overall_assessment")
+                    return jsonify({
+                        "status": "success",
+                        "message": f"Overall assessment shows {analysis['total_games']} minigames analyzed.",
+                        "results": results,
+                        "analysis": analysis
+                    })
             else:
                 results = ua.get_user_game_results(user_id, game_id)
 
@@ -264,21 +276,6 @@ def mistakes():
     mistake_categories = ua.categorize_mistakes(items , llm_client)
     return jsonify({"message": "AI Categorization Completed.", "Categories": mistake_categories})
 
-
-@app.route('/api/users/list')
-def api_users_list():
-    """Get list of all users for dropdown"""
-    users = oa.get_all_users_list()
-    return jsonify(users)
-
-@app.route('/api/users/<int:user_id>/performance')
-def api_user_performance(user_id):
-    """Get user's performance across all games"""
-    performance_data = oa.get_user_performance_by_games(user_id)
-    if not performance_data:
-        return jsonify({"message": "No performance data found for this user."})
-    
-    return jsonify(performance_data)
 
 
 if __name__ == '__main__':

@@ -30,309 +30,530 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 else if (data.status === 'success') {
                     if ('analysis' in data) {
-                                                const header = document.createElement('div');
-                        header.className = 'alert alert-success';
-                        header.innerText = data.message;
-                        container.appendChild(header);
+                        
+                        // NEW: Check if this is overall assessment
+                        if (data.analysis.analysis_type === "overall_assessment") {
+                            const header = document.createElement('div');
+                            header.className = 'alert alert-success';
+                            header.innerText = data.message;
+                            container.appendChild(header);
 
-                        // ! New summary card design start
-                        const summaryCard = document.createElement('div');
-                        summaryCard.className = 'results-summary-container';
-                        container.appendChild(summaryCard);
-
-                        const stats = data.analysis;
-
-                        // Insert summary statistics
-                        summaryCard.innerHTML += `
-                            <div class="results-summary-container__result">
-                                <div class="heading-tertiary">Total Attempts</div>
-                                <div class="result-box">
-                                    <div class="heading-primary">${stats.attempts}</div>
-                                </div>
-                            </div>
-                            <div class="results-summary-container__options">
-                                <div class="heading-secondary heading-secondary--blue">Summary</div>
-                                <div class="summary-result-options">
-                                    <div class="result-option result-option-completedattempts">
-                                        <div class="icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00BD91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                        <span class="completedattempts-icon-text p-1">Completed Attempts</span>
+                            // Summary card for overall assessment
+                            const summaryCard = document.createElement('div');
+                            summaryCard.className = 'stats-card mt-4';
+                            summaryCard.innerHTML = `
+                                <h4 class="text-center mb-4">Overall Assessment Summary</h4>
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <div class="stat-box">
+                                            <h5 class="text-primary">${data.analysis.total_games}</h5>
+                                            <p class="mb-0">Total Minigames</p>
                                         </div>
-                                        <div class="result-box"><span>${stats.completed_attempts}</span> / ${stats.attempts}</div>
                                     </div>
-                                    <div class="result-option result-option-failedattempts">
-                                        <div class="icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                                        <span class="failedattempts-icon-text p-1">Failed Attempts</span>
+                                    <div class="col-md-4">
+                                        <div class="stat-box">
+                                            <h5 class="text-success">${data.analysis.overall_average}</h5>
+                                            <p class="mb-0">Overall Average Score</p>
                                         </div>
-                                        <div class="result-box"><span>${stats.failed_attempts}</span> / ${stats.attempts}</div>
                                     </div>
-                                    <div class="result-option result-option-averagescore">
-                                        <div class="icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9D00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2zM21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18"/></svg>
-                                        <span class="averagescore-icon-text p-1">Average Score</span>
+                                    <div class="col-md-4">
+                                        <div class="stat-box">
+                                            <h5 class="text-info">${data.analysis.game_stats.length > 0 ? Math.max(...data.analysis.game_stats.map(g => g.max_score)) : 0}</h5>
+                                            <p class="mb-0">Highest Score Achieved</p>
                                         </div>
-                                        <div class="result-box"><span>${stats.average_score}</span></div>
-                                    </div>
-                                    <div class="result-option result-option-minscore">
-                                        <div class="icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 17.2l-7.7-7.7-4 4-5.7-5.7"/><path d="M15 18h6v-6"/></svg>
-                                        <span class="minscore-icon-text p-1">Minimum Score</span>
-                                        </div>
-                                        <div class="result-box"><span>${stats.min_score}</span></div>
-                                    </div>
-                                    <div class="result-option result-option-maxscore">
-                                        <div class="icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"/><path d="M15 7h6v6"/></svg>
-                                        <span class="maxscore-icon-text p-1">Maximum Score</span>
-                                        </div>
-                                        <div class="result-box"><span>${stats.max_score}</span></div>
                                     </div>
                                 </div>
-                            </div>
-                            </div>
-                        `
-                        // ! New summary card design end
+                            `;
+                            container.appendChild(summaryCard);
 
+                            // Chart card for overall assessment
+                            const chartCard = document.createElement('div');
+                            chartCard.className = 'stats-card mt-4';
+                            container.appendChild(chartCard);
 
+                            const canvas = document.createElement('canvas');
+                            canvas.id = 'assessment-chart';
+                            chartCard.appendChild(canvas);
 
-                        // Create result card
-                        const resultCard = document.createElement('div');
-                        resultCard.className = 'stats-card mt-4';
-                        container.appendChild(resultCard);
+                            // Create chart with gradient colors from worst to best
+                            const chartData = data.analysis.chart_data;
+                            const gameCount = chartData.labels.length;
+                            
+                            // Create gradient colors from red (worst) to green (best)
+                            const backgroundColors = chartData.labels.map((_, index) => {
+                                const ratio = index / Math.max(gameCount - 1, 1);
+                                const red = Math.round(255 * (1 - ratio));
+                                const green = Math.round(255 * ratio);
+                                return `rgba(${red}, ${green}, 100, 0.6)`;
+                            });
 
-                        // Chart
-                        const canvas = document.createElement('canvas');
-                        canvas.id = 'score-chart';
-                        resultCard.appendChild(canvas);
+                            const borderColors = backgroundColors.map(color => color.replace('0.6', '1'));
 
-                        const labels = data.analysis.trend.map(item => item.Attempt);
-                        const scores = data.analysis.trend.map(item => item.Score);
+                            new Chart(canvas, {
+    type: 'bar',
+    data: {
+        labels: chartData.labels.map(label => {
+            // Split long labels into multiple lines
+            if (label.length > 15) {
+                // Look for common break points
+                let parts = [];
+                if (label.includes(' - ')) {
+                    parts = label.split(' - ');
+                } else if (label.includes(' Training')) {
+                    parts = label.split(' Training');
+                    if (parts.length > 1) {
+                        parts = [parts[0] + ' Training', parts[1].trim()];
+                    }
+                } else if (label.includes(' Practice')) {
+                    parts = label.split(' Practice');
+                    if (parts.length > 1) {
+                        parts = [parts[0] + ' Practice', parts[1].trim()];
+                    }
+                } else {
+                    // Split by words, aim for roughly equal parts
+                    const words = label.split(' ');
+                    const mid = Math.ceil(words.length / 2);
+                    parts = [
+                        words.slice(0, mid).join(' '),
+                        words.slice(mid).join(' ')
+                    ];
+                }
+                return parts.filter(part => part.trim().length > 0);
+            }
+            return label;
+        }),
+        datasets: [{
+            label: 'Average Score',
+            data: chartData.datasets[0].data,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 2,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            title: {
+                display: true,
+                text: 'Average Scores by Minigame (Worst to Best Performance)',
+                font: {
+                    size: 18,
+                    weight: 'bold'
+                },
+                padding: {
+                    top: 10,
+                    bottom: 20
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    title: function(context) {
+                        // Show full label in tooltip
+                        return chartData.labels[context[0].dataIndex];
+                    },
+                    afterLabel: function(context) {
+                        const gameIndex = context.dataIndex;
+                        const gameData = data.analysis.game_stats[gameIndex];
+                        return [
+                            `Total Attempts: ${gameData.total_attempts}`,
+                            `Best Score: ${gameData.max_score}`,
+                            `Worst Score: ${gameData.min_score}`
+                        ];
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    maxRotation: 0,  // Keep labels straight (no rotation)
+                    minRotation: 0,  // Keep labels straight (no rotation)
+                    padding: 10,
+                    font: {
+                        size: 14
+                    },
+                    callback: function(value, index) {
+                        // Return the processed multi-line labels
+                        const label = this.getLabelForValue(value);
+                        if (Array.isArray(label)) {
+                            return label;
+                        }
+                        return label;
+                    }
+                }
+            },
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Average Score',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            }
+        },
+        layout: {
+            padding: {
+                bottom: 40  // Add extra space for multi-line labels
+            }
+        }
+    }
+});
 
-                        new Chart(canvas, {
-                            type: 'bar',
-                            data: {
-                                labels: labels,
-                                datasets: [
-                                    {
-                                        type: 'bar',
-                                        label: 'Score per Attempt',
-                                        data: scores,
-                                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                                        borderColor: 'rgba(54, 162, 235, 1)',
-                                        borderWidth: 1,
-                                        hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                        hoverBorderColor: 'rgba(54, 162, 235, 1)',
-                                        borderRadius: 6,
-                                        barPercentage: 0.6,
-                                        datalabels: {
-                                            display: false
+                            // Detailed table for overall assessment
+                            const table = document.createElement('table');
+                            table.className = 'table results-table mt-5';
+                            table.innerHTML = `
+                                <thead>
+                                    <tr>
+                                        <th>Performance Rank</th>
+                                        <th>Minigame</th>
+                                        <th>Average Score</th>
+                                        <th>Total Attempts</th>
+                                        <th>Best Score</th>
+                                        <th>Worst Score</th>
+                                        <th>Performance Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.analysis.game_stats.map((stat, index) => {
+                                        let performanceLevel = '';
+                                        let performanceClass = '';
+                                        if (index < gameCount * 0.3) {
+                                            performanceLevel = 'Needs Improvement';
+                                            performanceClass = 'text-danger';
+                                        } else if (index < gameCount * 0.7) {
+                                            performanceLevel = 'Average';
+                                            performanceClass = 'text-warning';
+                                        } else {
+                                            performanceLevel = 'Strong';
+                                            performanceClass = 'text-success';
                                         }
-                                    },
-                                    {
-                                        type: 'line',
-                                        label: 'Trend Line',
-                                        data: scores,
-                                        fill: false,
-                                        borderColor: '#ff6384',
-                                        backgroundColor: '#ff6384',
-                                        tension: 0.3,
-                                        pointRadius: 4,
-                                        pointHoverRadius: 6,
-                                        datalabels: {
-                                            display: true,
-                                            anchor: 'end',
-                                            align: 'top',
-                                            formatter: Math.round,
-                                            font: {
-                                                weight: 'bold'
+                                        
+                                        return `
+                                            <tr>
+                                                <td><strong>${index + 1}</strong></td>
+                                                <td>${stat.game_name}</td>
+                                                <td><strong>${stat.average_score}</strong></td>
+                                                <td>${stat.total_attempts}</td>
+                                                <td class="text-success">${stat.max_score}</td>
+                                                <td class="text-danger">${stat.min_score}</td>
+                                                <td><span class="${performanceClass}">${performanceLevel}</span></td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            `;
+                            container.appendChild(table);
+
+                        } else {
+                            // EXISTING CODE: Regular single game analysis
+                            const header = document.createElement('div');
+                            header.className = 'alert alert-success';
+                            header.innerText = data.message;
+                            container.appendChild(header);
+
+                            // ! New summary card design start
+                            const summaryCard = document.createElement('div');
+                            summaryCard.className = 'results-summary-container';
+                            container.appendChild(summaryCard);
+
+                            const stats = data.analysis;
+
+                            // Insert summary statistics
+                            summaryCard.innerHTML += `
+                                <div class="results-summary-container__result">
+                                    <div class="heading-tertiary">Total Attempts</div>
+                                    <div class="result-box">
+                                        <div class="heading-primary">${stats.attempts}</div>
+                                    </div>
+                                </div>
+                                <div class="results-summary-container__options">
+                                    <div class="heading-secondary heading-secondary--blue">Summary</div>
+                                    <div class="summary-result-options">
+                                        <div class="result-option result-option-completedattempts">
+                                            <div class="icon-box">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00BD91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                            <span class="completedattempts-icon-text p-1">Completed Attempts</span>
+                                            </div>
+                                            <div class="result-box"><span>${stats.completed_attempts}</span> / ${stats.attempts}</div>
+                                        </div>
+                                        <div class="result-option result-option-failedattempts">
+                                            <div class="icon-box">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                            <span class="failedattempts-icon-text p-1">Failed Attempts</span>
+                                            </div>
+                                            <div class="result-box"><span>${stats.failed_attempts}</span> / ${stats.attempts}</div>
+                                        </div>
+                                        <div class="result-option result-option-averagescore">
+                                            <div class="icon-box">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9D00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2zM21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18"/></svg>
+                                            <span class="averagescore-icon-text p-1">Average Score</span>
+                                            </div>
+                                            <div class="result-box"><span>${stats.average_score}</span></div>
+                                        </div>
+                                        <div class="result-option result-option-minscore">
+                                            <div class="icon-box">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 17.2l-7.7-7.7-4 4-5.7-5.7"/><path d="M15 18h6v-6"/></svg>
+                                            <span class="minscore-icon-text p-1">Minimum Score</span>
+                                            </div>
+                                            <div class="result-box"><span>${stats.min_score}</span></div>
+                                        </div>
+                                        <div class="result-option result-option-maxscore">
+                                            <div class="icon-box">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1125D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"/><path d="M15 7h6v6"/></svg>
+                                            <span class="maxscore-icon-text p-1">Maximum Score</span>
+                                            </div>
+                                            <div class="result-box"><span>${stats.max_score}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            `
+                            // ! New summary card design end
+
+                            // Create result card
+                            const resultCard = document.createElement('div');
+                            resultCard.className = 'stats-card mt-4';
+                            container.appendChild(resultCard);
+
+                            // Chart
+                            const canvas = document.createElement('canvas');
+                            canvas.id = 'score-chart';
+                            resultCard.appendChild(canvas);
+
+                            const labels = data.analysis.trend.map(item => item.Attempt);
+                            const scores = data.analysis.trend.map(item => item.Score);
+
+                            new Chart(canvas, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [
+                                        {
+                                            type: 'bar',
+                                            label: 'Score per Attempt',
+                                            data: scores,
+                                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                            borderColor: 'rgba(54, 162, 235, 1)',
+                                            borderWidth: 1,
+                                            hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                            hoverBorderColor: 'rgba(54, 162, 235, 1)',
+                                            borderRadius: 6,
+                                            barPercentage: 0.6,
+                                            datalabels: {
+                                                display: false
+                                            }
+                                        },
+                                        {
+                                            type: 'line',
+                                            label: 'Trend Line',
+                                            data: scores,
+                                            fill: false,
+                                            borderColor: '#ff6384',
+                                            backgroundColor: '#ff6384',
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6,
+                                            datalabels: {
+                                                display: true,
+                                                anchor: 'end',
+                                                align: 'top',
+                                                formatter: Math.round,
+                                                font: {
+                                                    weight: 'bold'
+                                                }
                                             }
                                         }
-                                    }
-                                ]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'top',
-                                        labels: {
-                                            boxWidth: 12,
-                                            padding: 15
-                                        }
-                                    },
-                                    tooltip: {
-                                        mode: 'index',
-                                        intersect: false,
-                                        callbacks: {
-                                            label: context => `Score: ${context.parsed.y}`
-                                        }
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: 'Score Trend Across Attempts',
-                                        font: {
-                                            size: 18
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                            labels: {
+                                                boxWidth: 12,
+                                                padding: 15
+                                            }
                                         },
-                                        padding: {
-                                            top: 10,
-                                            bottom: 20
+                                        tooltip: {
+                                            mode: 'index',
+                                            intersect: false,
+                                            callbacks: {
+                                                label: context => `Score: ${context.parsed.y}`
+                                            }
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Score Trend Across Attempts',
+                                            font: {
+                                                size: 18
+                                            },
+                                            padding: {
+                                                top: 10,
+                                                bottom: 20
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Attempt',
+                                                font: {
+                                                    size: 14,
+                                                    weight: 'bold'
+                                                }
+                                            }
+                                        },
+                                        y: {
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: 'Score',
+                                                font: {
+                                                    size: 14,
+                                                    weight: 'bold'
+                                                }
+                                            }
                                         }
                                     }
                                 },
-                                scales: {
-                                    x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Attempt',
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold'
-                                            }
-                                        }
-                                    },
-                                    y: {
-                                        beginAtZero: true,
-                                        title: {
-                                            display: true,
-                                            text: 'Score',
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold'
-                                            }
-                                        }
+                                plugins: [ChartDataLabels]
+                            });
+
+                            // Table
+                            const table = document.createElement('table');
+                            table.className = 'table results-table mt-5';
+                            const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
+
+                            // Add "Attempt" column header
+                            const thead = document.createElement('thead');
+                            thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}<th>AI Analysis</th></tr>`;
+                            table.appendChild(thead);
+
+                            const tbody = document.createElement('tbody');
+                            data.results.forEach((row, rowIndex) => {
+                                rowDataArray.push(row);
+                                const tr = document.createElement('tr');
+
+                                // Add attempt number first
+                                let rowHtml = `<td>Attempt ${rowIndex + 1}</td>`;
+
+                                rowHtml += keys.map(k => {
+                                    if (k === "Overall_Results" && row[k]) {
+                                        const shortText = row[k].substring(0, 100);
+                                        const cellId = `full-result-${rowIndex}`;
+                                        return `
+                                            <td>
+                                                <div class="result-wrapper">
+                                                    <span class="show-full-result"
+                                                        data-target="${cellId}"
+                                                        data-fulltext="${encodeURIComponent(row[k])}"
+                                                        style="cursor: pointer; color: blue;"
+                                                        title="Click to view full result">
+                                                        ${shortText}...
+                                                    </span>
+                                                    <div id="${cellId}" class="full-result-text" style="display:none; white-space: pre-wrap; margin-top: 5px;"></div>
+                                                </div>
+                                            </td>
+                                        `;
+                                    } else {
+                                        return `<td>${row[k]}</td>`;
                                     }
-                                }
-                            },
-                            plugins: [ChartDataLabels]
-                        });
+                                }).join('');
 
-                        // Table
-                        const table = document.createElement('table');
-                        table.className = 'table results-table mt-5';
-                        const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
+                                rowHtml += `
+                                <td>
+                                    <button class="btn analyze-btn" data-index='${rowIndex}' title="Analyze this row">
+                                        <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
+                                            <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+                                        </svg>
+                                        <span class="text">Generate</span>
+                                    </button>
+                                </td>`;
 
+                                tr.innerHTML = rowHtml;
+                                tbody.appendChild(tr);
+                            });
+                            table.appendChild(tbody);
+                            container.appendChild(table);
 
-                        // Add "Attempt" column header
-                        const thead = document.createElement('thead');
-                        thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}<th>AI Analysis</th></tr>`;
-                        table.appendChild(thead);
+                            // Attach event listeners to all .show-full-result elements
+                            document.querySelectorAll('.show-full-result').forEach(span => {
+                                span.addEventListener('click', () => {
+                                    const targetId = span.getAttribute('data-target');
+                                    const fullText = decodeURIComponent(span.getAttribute('data-fulltext'));
+                                    const fullTextEl = document.getElementById(targetId);
+                                    const shortTextEl = span;
 
-                        const tbody = document.createElement('tbody');
-                        data.results.forEach((row, rowIndex) => {
-                            rowDataArray.push(row);
-                            const tr = document.createElement('tr');
-
-                            // Add attempt number first
-                            let rowHtml = `<td>Attempt ${rowIndex + 1}</td>`;
-
-                            rowHtml += keys.map(k => {
-                                if (k === "Overall_Results" && row[k]) {
-                                    const shortText = row[k].substring(0, 100);
-                                    const cellId = `full-result-${rowIndex}`;
-                                    return `
-                                        <td>
-                                            <div class="result-wrapper">
-                                                <span class="show-full-result"
-                                                    data-target="${cellId}"
-                                                    data-fulltext="${encodeURIComponent(row[k])}"
-                                                    style="cursor: pointer; color: blue;"
-                                                    title="Click to view full result">
-                                                    ${shortText}...
-                                                </span>
-                                                <div id="${cellId}" class="full-result-text" style="display:none; white-space: pre-wrap; margin-top: 5px;"></div>
-                                            </div>
-                                        </td>
-                                    `;
-                                } else {
-                                    return `<td>${row[k]}</td>`;
-                                }
-                            }).join('');
-
-                            rowHtml += `
-                            <td>
-                                <button class="btn analyze-btn" data-index='${rowIndex}' title="Analyze this row">
-                                    <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
-                                        <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
-                                    </svg>
-
-                                    <span class="text">Generate</span>
-                                </button>
-                            </td>`;
-
-                            tr.innerHTML = rowHtml;
-                            tbody.appendChild(tr);
-                        });
-                        table.appendChild(tbody);
-                        container.appendChild(table);
-
-
-                        // Attach event listeners to all .show-full-result elements
-                        document.querySelectorAll('.show-full-result').forEach(span => {
-                            span.addEventListener('click', () => {
-                                const targetId = span.getAttribute('data-target');
-                                const fullText = decodeURIComponent(span.getAttribute('data-fulltext'));
-                                const fullTextEl = document.getElementById(targetId);
-                                const shortTextEl = span;
-
-                                if (fullTextEl.style.display === 'none') {
-                                    fullTextEl.style.display = 'block';
-                                    fullTextEl.innerText = fullText;
-                                    shortTextEl.style.display = 'none';  // hide short version
-                                } else {
-                                    fullTextEl.style.display = 'none';
-                                    shortTextEl.style.display = 'inline';  // show short version
-                                }
-                                fullTextEl.addEventListener('click', () => {
-                                    fullTextEl.style.display = 'none';
-                                    shortTextEl.style.display = 'inline';
+                                    if (fullTextEl.style.display === 'none') {
+                                        fullTextEl.style.display = 'block';
+                                        fullTextEl.innerText = fullText;
+                                        shortTextEl.style.display = 'none';  // hide short version
+                                    } else {
+                                        fullTextEl.style.display = 'none';
+                                        shortTextEl.style.display = 'inline';  // show short version
+                                    }
+                                    fullTextEl.addEventListener('click', () => {
+                                        fullTextEl.style.display = 'none';
+                                        shortTextEl.style.display = 'inline';
+                                    });
                                 });
                             });
-                        });
 
-                        // Attach analyze button click handlers
-                        document.querySelectorAll('.analyze-btn').forEach(btn => {
-                            btn.addEventListener('click', () => {
-                                const index = parseInt(btn.getAttribute('data-index'));
-                                const rowData = rowDataArray[index];
+                            // Attach analyze button click handlers
+                            document.querySelectorAll('.analyze-btn').forEach(btn => {
+                                btn.addEventListener('click', () => {
+                                    const index = parseInt(btn.getAttribute('data-index'));
+                                    const rowData = rowDataArray[index];
 
-                                // Show modal with loading message
-                                const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
-                                const modalContent = document.getElementById('ai-analysis-content');
-                                modalContent.innerHTML = `
-                                    <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
-                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <div class="mt-3">Analyzing performance... please wait.</div>
-                                    </div>
-                                `;
-                                modal.show();
-
-                                fetch('/user', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({ row_analysis: rowData })
-                                })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        const result = data.analysis || data.message || 'No analysis result.';
-                                        const markdownHtml = marked.parse(result);
-                                        modalContent.innerHTML = `
-                                            <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
-                                                ${markdownHtml}
+                                    // Show modal with loading message
+                                    const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+                                    const modalContent = document.getElementById('ai-analysis-content');
+                                    modalContent.innerHTML = `
+                                        <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                                <span class="visually-hidden">Loading...</span>
                                             </div>
-                                        `;
+                                            <div class="mt-3">Analyzing performance... please wait.</div>
+                                        </div>
+                                    `;
+                                    modal.show();
+
+                                    fetch('/user', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ row_analysis: rowData })
                                     })
-                                    .catch(err => {
-                                        console.error('Analysis error:', err);
-                                        modalContent.innerHTML = `<p class="text-danger">An error occurred while analyzing this attempt.</p>`;
-                                    });
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            const result = data.analysis || data.message || 'No analysis result.';
+                                            const markdownHtml = marked.parse(result);
+                                            modalContent.innerHTML = `
+                                                <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                                    ${markdownHtml}
+                                                </div>
+                                            `;
+                                        })
+                                        .catch(err => {
+                                            console.error('Analysis error:', err);
+                                            modalContent.innerHTML = `<p class="text-danger">An error occurred while analyzing this attempt.</p>`;
+                                        });
+                                });
                             });
-                        });
+                        }
                     }
                     else{
                         const sections = [
