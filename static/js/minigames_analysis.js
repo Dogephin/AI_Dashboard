@@ -84,11 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
         <p><strong>Average Score:</strong> ${s.average_score}</p>
 
-        <h4 class="mt-3">Top Minor Errors</h4>
-        <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+        <h4 class="mt-3" style="color: #000;">Top Minor Errors</h4>
+        <ul style="color: #000;">${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
 
-        <h4 class="mt-2">Top Severe Errors</h4>
-        <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+        <h4 class="mt-2" style="color: #000;">Top Severe Errors</h4>
+        <ul style="color: #000;">${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
 
         <button class="btn btn-outline-secondary btn-sm mt-3 ai-summary-btn"
                 data-game-id="${gameId}">
