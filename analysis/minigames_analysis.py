@@ -45,7 +45,7 @@ def get_list_of_minigames():
                Game_ID,
                REPLACE(Name, '<br>', ' - ') AS Name
         FROM   ima_game_level
-        ORDER  BY Name;
+        ORDER  BY Game_ID, Level_ID;
         """
     )
     try:

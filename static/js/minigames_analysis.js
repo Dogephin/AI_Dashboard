@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = document.createElement('div');
     card.className = 'game-card';      // styled in minigames.html <style>
     card.innerHTML = `
-      <h2 class="text-lg font-semibold mb-1">${game.Name}</h2>
+      <h2 class="text-lg font-semibold mb-1" style="color: #000;">${game.Name}</h2>
       <p class="text-sm text-gray-600 mb-2">Game ID ${game.Game_ID} | Level ${game.Level_ID}</p>
       <button class="btn btn-primary btn-sm" data-game-id="${game.Level_ID}">
         View Stats
