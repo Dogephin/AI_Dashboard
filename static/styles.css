@@ -612,3 +612,124 @@ canvas {
 .hidden {
     display: none;
 }
+
+
+/* User Analysis Specific Styles */
+.user-analysis-container {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-dropdown-container {
+    margin-bottom: 1rem;
+}
+
+.user-dropdown-container .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.user-dropdown-container .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.user-dropdown-container .form-select:focus {
+    border-color: #506dff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(80, 109, 255, 0.25);
+}
+
+#userPerformanceChart {
+    max-height: 400px !important;
+    width: 100% !important;
+}
+
+/* Chart container styling */
+.user-chart-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 1px solid #e9ecef;
+}
+
+/* Status Summary Cards */
+.user-status-summary {
+    margin-top: 1rem;
+}
+
+.status-cards-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+}
+
+.status-card {
+    flex: 1;
+    min-width: 60px;
+    max-width: 110px;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    color: white;
+    transition: transform 0.2s ease-in-out;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.status-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Status card colors */
+.status-card-completed {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.status-card-failed {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.status-card-userexit {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .status-cards-container {
+        flex-direction: column;
+    }
+    
+    .status-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    #userPerformanceChart {
+        max-height: 300px !important;
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+    }
+}

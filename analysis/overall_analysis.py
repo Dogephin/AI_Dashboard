@@ -370,3 +370,104 @@ def parse_llm_insights(response_text):
         content = content.strip()
         insights.append({"title": title, "content": content})
     return insights
+
+#g
+def get_all_users_list():
+    """Get list of all users for dropdown"""
+    query = text("""
+        SELECT DISTINCT Id as user_id, Username as username 
+        FROM account 
+        ORDER BY Username
+    """)
+    
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            users = [dict(row._mapping) for row in result.fetchall()]
+        logger.info(f"Fetched {len(users)} users for dropdown")
+        return users
+    except Exception as e:
+        logger.error(f"Failed to fetch users: {e}")
+        return []
+
+def get_user_performance_by_games(user_id):
+    """Get user's performance across all mini-games with average scores and status counts"""
+    query = text("""
+        SELECT 
+            igl.Name as game_name,
+            igl.Level_ID as game_id,
+            psgs.Status,
+            psgs.Score,
+            COUNT(*) as attempt_count
+        FROM ima_plan_session as ps
+        JOIN ima_plan_session_game_status as psgs ON ps.Session_ID = psgs.Session_ID
+        JOIN ima_plan_game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+        JOIN ima_game_level as igl ON pg.Level = igl.Level_ID
+        WHERE ps.User_ID = :user_id
+        GROUP BY igl.Level_ID, igl.Name, psgs.Status, psgs.Score
+        ORDER BY igl.Name, psgs.Status
+    """)
+    
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query, {"user_id": user_id})
+            rows = result.fetchall()
+        
+        # Process data to calculate averages and status counts
+        games_data = {}
+        
+        for row in rows:
+            game_name = row.game_name.replace('<br>', ' - ')
+            game_id = row.game_id
+            status = row.Status
+            score = row.Score if row.Score is not None else 0
+            count = row.attempt_count
+            
+            if game_name not in games_data:
+                games_data[game_name] = {
+                    'game_id': game_id,
+                    'scores': [],
+                    'complete': 0,
+                    'fail': 0,
+                    'userexit': 0,
+                    'total_attempts': 0
+                }
+            
+            # Add scores for average calculation
+            for _ in range(count):
+                games_data[game_name]['scores'].append(score)
+            
+            # Count status occurrences
+            if status == 'complete':
+                games_data[game_name]['complete'] += count
+            elif status == 'fail':
+                games_data[game_name]['fail'] += count
+            elif status == 'userexit':
+                games_data[game_name]['userexit'] += count
+            
+            games_data[game_name]['total_attempts'] += count
+        
+        # Calculate averages
+        result_data = {}
+        for game_name, data in games_data.items():
+            if data['scores']:
+                avg_score = sum(data['scores']) / len(data['scores'])
+            else:
+                avg_score = 0
+                
+            result_data[game_name] = {
+                'game_id': data['game_id'],
+                'average_score': round(avg_score, 2),
+                'complete': data['complete'],
+                'fail': data['fail'],
+                'userexit': data['userexit'],
+                'total_attempts': data['total_attempts'],
+                'completion_rate': round((data['complete'] / data['total_attempts']) * 100, 2) if data['total_attempts'] > 0 else 0
+            }
+        
+        logger.info(f"Processed performance data for user {user_id} across {len(result_data)} games")
+        return result_data
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch user performance for user {user_id}: {e}")
+        return {}

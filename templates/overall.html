@@ -84,9 +84,41 @@
         </button>
     </div>
 
-     <!-- Overall User analysis -->
-    <div style="flex: 1; min-width: 300px;">
+    <!-- Overall User analysis -->
+    <div style="flex: 1; min-width: 300px;" class="user-analysis-container">
       <div class="chart-title">Overall User Analysis</div>
+      
+      <!-- User Selection Dropdown -->
+      <div class="user-dropdown-container" style="display: flex !important; align-items: center !important; gap: 1rem !important;">
+        <label for="user-select-overall" class="form-label" style="margin-bottom: 0 !important; white-space: nowrap !important;">Select User:</label>
+        <select id="user-select-overall" class="form-select inline-select" style="flex: 1 !important; max-width: 200px !important;">
+          <option value="">-- Select a User --</option>
+        </select>
+      </div>
+      
+      <!-- Chart Container -->
+      <div id="user-chart-container" class="user-chart-container" style="display: none;">
+        <canvas id="userPerformanceChart"></canvas>
+      </div>
+      
+      <!-- Status Summary Cards -->
+      <div id="user-status-summary" class="user-status-summary" style="display: none;">
+        <div class="status-cards-container">
+          <div class="status-card status-card-completed">
+            <div class="status-card-title">Completed</div>
+            <div class="status-card-value" id="total-completed">0</div>
+          </div>
+          <div class="status-card status-card-failed">
+            <div class="status-card-title">Failed</div>
+            <div class="status-card-value" id="total-failed">0</div>
+          </div>
+          <div class="status-card status-card-userexit">
+            <div class="status-card-title">User Exit</div>
+            <div class="status-card-value" id="total-userexit">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="insights-title">Overall User Analysis:</div>
       <button class="btn analyze-btn" data-type="overall-user" title="Analyze this row" id="overall-btn">
             <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1" id="Layer_1" class="sparkle">
                 <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
@@ -129,5 +161,6 @@
   
   <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
   <script src="{{ url_for('static', filename='js/overall_analysis.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/user_charts.js') }}"></script>
 </body>
 </html>

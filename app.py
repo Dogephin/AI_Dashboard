@@ -265,6 +265,21 @@ def mistakes():
     return jsonify({"message": "AI Categorization Completed.", "Categories": mistake_categories})
 
 
+@app.route('/api/users/list')
+def api_users_list():
+    """Get list of all users for dropdown"""
+    users = oa.get_all_users_list()
+    return jsonify(users)
+
+@app.route('/api/users/<int:user_id>/performance')
+def api_user_performance(user_id):
+    """Get user's performance across all games"""
+    performance_data = oa.get_user_performance_by_games(user_id)
+    if not performance_data:
+        return jsonify({"message": "No performance data found for this user."})
+    
+    return jsonify(performance_data)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
