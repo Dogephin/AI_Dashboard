@@ -634,3 +634,93 @@ canvas {
 .hidden {
     display: none;
 }
+
+/* Assessment Summary Styles */
+.stat-box {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-box h5 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.stat-box p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin: 0;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Chart container adjustments for assessment */
+#assessment-chart {
+    height: 400px !important;
+}
+
+/* Table enhancements for assessment */
+.results-table th {
+    background-color: #495057 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+}
+
+.results-table td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.results-table .text-success {
+    font-weight: bold;
+}
+
+.results-table .text-danger {
+    font-weight: bold;
+}
+
+.results-table .text-warning {
+    font-weight: bold;
+}
+
+/* Performance level badges */
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-box h5 {
+        font-size: 2rem;
+    }
+    
+    .results-table {
+        font-size: 0.875rem;
+    }
+    
+    .results-table th,
+    .results-table td {
+        padding: 0.5rem;
+    }
+}
