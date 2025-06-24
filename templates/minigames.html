@@ -1,108 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Analysis Dashboard – Minigames</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Analysis Dashboard – Minigames</title>
 
-  <link
-  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-  rel="stylesheet"
-  integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
-  crossorigin="anonymous"
-/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous" />
 
-  <!-- your global stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <!-- your global stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 
-  <!-- Chart.js is still available if you need it later -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js is still available if you need it later -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- --- Tiny page-specific styles --- -->
-  <style>
-    /* simple responsive grid */
-    #gamesGrid{
-      --gap:1rem;
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-      gap:var(--gap);
-      margin:1.5rem auto;
-      max-width:1200px;
-      padding:0 var(--gap);
-    }
-    .game-card{
-      background:#fff;
-      border-radius:12px;
-      box-shadow:0 2px 4px rgba(0,0,0,.08);
-      padding:1rem 1.25rem;
-      transition:transform .15s ease, box-shadow .15s ease;
-      cursor:pointer;
-      text-decoration:none;
-      color:inherit;
-    }
-    .game-card:hover{
-      transform:translateY(-4px);
-      box-shadow:0 6px 16px rgba(0,0,0,.12);
-    }
-    .game-card h2{font-size:1.05rem;margin:0 0 .25rem;font-weight:600}
-    .game-card p{font-size:.9rem;margin:0;color:#555}
+    <!-- Script for rendering markdown content -->
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    body { background-color: #ffffff !important; }
-  </style>
+    <!-- --- Tiny page-specific styles --- -->
+    <style>
+        /* simple responsive grid */
+        #gamesGrid {
+            --gap: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--gap);
+            margin: 1.5rem auto;
+            max-width: 1200px;
+            padding: 0 var(--gap);
+        }
+
+        .game-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
+            padding: 1rem 1.25rem;
+            transition: transform .15s ease, box-shadow .15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .12);
+        }
+
+        .game-card h2 {
+            font-size: 1.05rem;
+            margin: 0 0 .25rem;
+            font-weight: 600
+        }
+
+        .game-card p {
+            font-size: .9rem;
+            margin: 0;
+            color: #555
+        }
+
+        body {
+            background-color: #ffffff !important;
+        }
+    </style>
 </head>
 
 <script src="{{ url_for('static', filename='js/minigames_analysis.js') }}"></script>
 
 <body>
-  <header>
-    <div class="header-content">
-      <button id="back-button" onclick="window.location.href='/'">
-        <!-- (same SVG arrow as before) -->
-        <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-          <path d="M874.69 495.52c0 11.3-9.17 20.47-20.47 20.47H249.44l188.08 188.08c7.99 7.99 7.99 20.95 0 28.94-4 3.99-9.24 5.99-14.47 5.99-5.24 0-10.48-2-14.48-5.99L185.51 509.97c-3.84-3.84-5.99-9.05-5.99-14.47 0-5.43 2.16-10.63 5.99-14.47l223.02-223.03c7.99-7.99 20.96-7.99 28.95 0 7.99 8 7.99 20.96 0 28.95L249.43 475.06h604.79c11.3 0 20.47 9.16 20.47 20.46z"/>
-        </svg>
-        <span>Back</span>
-      </button>
-      <div class="header-title">Game Analysis Dashboard – Minigames</div>
-    </div>
-  </header>
+    <header>
+        <div class="header-content">
+            <button id="back-button" onclick="window.location.href='/'">
+                <!-- (same SVG arrow as before) -->
+                <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                    <path
+                        d="M874.69 495.52c0 11.3-9.17 20.47-20.47 20.47H249.44l188.08 188.08c7.99 7.99 7.99 20.95 0 28.94-4 3.99-9.24 5.99-14.47 5.99-5.24 0-10.48-2-14.48-5.99L185.51 509.97c-3.84-3.84-5.99-9.05-5.99-14.47 0-5.43 2.16-10.63 5.99-14.47l223.02-223.03c7.99-7.99 20.96-7.99 28.95 0 7.99 8 7.99 20.96 0 28.95L249.43 475.06h604.79c11.3 0 20.47 9.16 20.47 20.46z" />
+                </svg>
+                <span>Back</span>
+            </button>
+            <div class="header-title">Game Analysis Dashboard – Minigames</div>
+        </div>
+    </header>
 
-  <!-- grid is filled by JS -->
-  <section id="gamesGrid" class="grid gap-4   /* space between cards           */
+    <!-- grid is filled by JS -->
+    <section id="gamesGrid" class="grid gap-4   /* space between cards           */
                 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  /* 2-4 cols */
                 auto-rows-auto"></section>
 
-  <script>
-    async function fetchMinigames() {
-      try {
-        const res = await fetch('/api/minigames');
-        if (!res.ok) throw new Error('network');
-        return await res.json();
-      } catch (err) {
-        console.warn('Falling back to demo data:', err);
-        return [
-          { id: 1, name: 'MG1 – Verify Docs', description: 'Review patient information and verify documents.' },
-          { id: 2, name: 'MG2 – Dispense Medicine', description: 'Accurately dispense the correct drugs.' },
-          { id: 3, name: 'MG3 – Confirm ID', description: 'Match patient to their prescription with an ID check.' }
-        ];
-      }
-    }
+    <script>
+        async function fetchMinigames() {
+            try {
+                const res = await fetch('/api/minigames');
+                if (!res.ok) throw new Error('network');
+                return await res.json();
+            } catch (err) {
+                console.warn('Falling back to demo data:', err);
+                return [
+                    { id: 1, name: 'MG1 – Verify Docs', description: 'Review patient information and verify documents.' },
+                    { id: 2, name: 'MG2 – Dispense Medicine', description: 'Accurately dispense the correct drugs.' },
+                    { id: 3, name: 'MG3 – Confirm ID', description: 'Match patient to their prescription with an ID check.' }
+                ];
+            }
+        }
 
-    function createCard(g){
-      // link could go to e.g. `/analysis/minigame/${g.id}`
-      const a = document.createElement('a');
-      a.href = `#minigame-${g.id}`;
-      a.className = 'game-card';
-      a.innerHTML = `<h2>${g.name}</h2><p>${g.description ?? ''}</p>`;
-      return a;
-    }
+        function createCard(g) {
+            // link could go to e.g. `/analysis/minigame/${g.id}`
+            const a = document.createElement('a');
+            a.href = `#minigame-${g.id}`;
+            a.className = 'game-card';
+            a.innerHTML = `<h2>${g.name}</h2><p>${g.description ?? ''}</p>`;
+            return a;
+        }
 
-    async function init(){
-      const games = await fetchMinigames();
-      const grid  = document.getElementById('gamesGrid');
-      games.forEach(g => grid.appendChild(createCard(g)));
-    }
-    init();
-  </script>
+        async function init() {
+            const games = await fetchMinigames();
+            const grid = document.getElementById('gamesGrid');
+            games.forEach(g => grid.appendChild(createCard(g)));
+        }
+        init();
+    </script>
 </body>
+
 </html>

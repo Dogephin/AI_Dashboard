@@ -175,7 +175,7 @@ canvas {
     height: auto !important;
 }
 
-#overall-btn{
+#overall-btn {
     border: none;
     padding: 6px 14px;
     border-radius: 20px;
@@ -522,20 +522,20 @@ canvas {
 
 
 .result-section {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-bottom: 25px;
-  padding: 20px 25px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    padding: 20px 25px;
 }
 
 .result-section h3 {
-  margin-top: 0;
-  border-bottom: 2px solid #007BFF;
-  padding-bottom: 8px;
-  color: #007BFF;
-  font-weight: 600;
-  font-size: 1.3rem;
+    margin-top: 0;
+    border-bottom: 2px solid #007BFF;
+    padding-bottom: 8px;
+    color: #007BFF;
+    font-weight: 600;
+    font-size: 1.3rem;
 }
 
 .section-header {
@@ -557,35 +557,35 @@ canvas {
 }
 
 .result-section ul {
-  list-style: none;
-  padding-left: 0;
-  margin-top: 15px;
+    list-style: none;
+    padding-left: 0;
+    margin-top: 15px;
 }
 
 .result-section li {
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  border-left: 5px solid transparent;
-  border-radius: 4px;
-  background: #f9f9f9;
-  cursor: default;
-  transition: background 0.3s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-left: 5px solid transparent;
+    border-radius: 4px;
+    background: #f9f9f9;
+    cursor: default;
+    transition: background 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .result-section li:hover {
-  background: #e9f5ff;
+    background: #e9f5ff;
 }
 
 .result-section li .badge {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 12px;
-  color: white;
-  text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    color: white;
+    text-transform: uppercase;
 }
 
 .toggle-btn {
@@ -641,20 +641,20 @@ canvas {
     border-radius: 12px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
 }
 
 .stat-box:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-box h5 {
     font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .stat-box p {
@@ -714,11 +714,11 @@ canvas {
     .stat-box h5 {
         font-size: 2rem;
     }
-    
+
     .results-table {
         font-size: 0.875rem;
     }
-    
+
     .results-table th,
     .results-table td {
         padding: 0.5rem;

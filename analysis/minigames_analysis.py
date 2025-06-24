@@ -32,6 +32,7 @@ from db import engine  # existing module in your project
 
 logger = logging.getLogger(__name__)
 
+
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔎  Fetch basic lists
 # ────────────────────────────────────────────────────────────────────────────────
@@ -115,20 +116,21 @@ def analyse_minigame_attempts(attempt_rows):
     if not attempt_rows:
         return {}
 
-    scores      = [row["Score"] for row in attempt_rows if row["Score"] is not None]
+    scores = [row["Score"] for row in attempt_rows if row["Score"] is not None]
     completions = [row for row in attempt_rows if row["Status"] == "complete"]
-    fails       = [row for row in attempt_rows if row["Status"] == "fail"]
+    fails = [row for row in attempt_rows if row["Status"] == "fail"]
 
     summary = {
         "total_attempts": len(attempt_rows),
-        "unique_users":   len({r["User_ID"] for r in attempt_rows}),
-        "completed":      len(completions),
-        "failed":         len(fails),
-        "completion_rate": round(len(completions) / len(attempt_rows) * 100, 2)
-                           if attempt_rows else 0,
-        "average_score":  round(mean(scores), 2) if scores else 0,
-        "min_score":      min(scores) if scores else 0,
-        "max_score":      max(scores) if scores else 0,
+        "unique_users": len({r["User_ID"] for r in attempt_rows}),
+        "completed": len(completions),
+        "failed": len(fails),
+        "completion_rate": (
+            round(len(completions) / len(attempt_rows) * 100, 2) if attempt_rows else 0
+        ),
+        "average_score": round(mean(scores), 2) if scores else 0,
+        "min_score": min(scores) if scores else 0,
+        "max_score": max(scores) if scores else 0,
     }
     return summary
 
@@ -191,10 +193,7 @@ def top_errors(entry_list, top_n=5):
 # ────────────────────────────────────────────────────────────────────────────────
 # 📝  AI-powered summariser (optional)
 # ────────────────────────────────────────────────────────────────────────────────
-def ai_summary_for_minigame(game_name: str,
-                            summary_stats: dict,
-                            errors: dict,
-                            client):
+def ai_summary_for_minigame(game_name: str, summary_stats: dict, errors: dict, client):
     """
     Call your LLM client to produce a natural-language executive summary.
     """
@@ -228,10 +227,10 @@ def ai_summary_for_minigame(game_name: str,
 
 # Helper similar to response_cleanup in user_analysis.py
 def cleanup_llm_response(text):
-    text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)          # bold
-    text = re.sub(r"(\*|_)(.*?)\1", r"\2", text)              # italics
-    text = re.sub(r"`([^`]*)`", r"\1", text)                  # inline code
-    text = re.sub(r"^\s{0,3}#{1,6}\s*", "", text, flags=re.M) # headings
-    text = re.sub(r"<[^>]+>", "", text)                       # html tags
-    text = re.sub(r"\n{3,}", "\n\n", text)                    # extra lines
+    text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)  # bold
+    text = re.sub(r"(\*|_)(.*?)\1", r"\2", text)  # italics
+    text = re.sub(r"`([^`]*)`", r"\1", text)  # inline code
+    text = re.sub(r"^\s{0,3}#{1,6}\s*", "", text, flags=re.M)  # headings
+    text = re.sub(r"<[^>]+>", "", text)  # html tags
+    text = re.sub(r"\n{3,}", "\n\n", text)  # extra lines
     return text.strip()

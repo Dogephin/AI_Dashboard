@@ -7,10 +7,13 @@ from statistics import mean
 
 logger = logging.getLogger(__name__)
 
+
 def get_list_of_users():
-    query = text("""
+    query = text(
+        """
         SELECT DISTINCT Id as "user_id", Username as "username" FROM account
-    """)
+    """
+    )
 
     try:
         with engine.connect() as conn:
@@ -22,8 +25,10 @@ def get_list_of_users():
         logger.error(f"Failed to fetch users: {e}")
         return []
 
+
 def get_list_of_games():
-    query = text("""
+    query = text(
+        """
         SELECT igl.Level_ID, igl.Game_ID, REPLACE(igl.Name, '<br>', ' - ') AS Name, ipg.Plan_Game_ID
         FROM ima_plan_game AS ipg
         JOIN ima_progression_sequence_level AS ipsl ON ipg.Sequence = ipsl.Sequence_ID
@@ -35,7 +40,8 @@ def get_list_of_games():
         FROM ima_plan_game AS ipg
         JOIN ima_game_level AS igl ON ipg.Level = igl.Level_ID  -- assumes `ima_plan_game.Level` points to `ima_game_level.Level_ID`
         ORDER BY Name;
-    """)
+    """
+    )
 
     try:
         with engine.connect() as conn:
@@ -44,10 +50,10 @@ def get_list_of_games():
 
         # Add a custom row at the bottom for overall mistake analysis
         custom_row = {
-            'Level_ID': '',
-            'Game_ID': '',
-            'Name': 'Overall Mistakes',
-            'Plan_Game_ID': ''
+            "Level_ID": "",
+            "Game_ID": "",
+            "Name": "Overall Mistakes",
+            "Plan_Game_ID": "",
         }
         games.append(custom_row)
         logger.info(f"Fetched {len(games)} unique games from the database.")
@@ -56,8 +62,10 @@ def get_list_of_games():
         logger.error(f"Failed to fetch games: {e}")
         return []
 
+
 def get_user_game_results(user_id, game_id):
-    query = text("""
+    query = text(
+        """
         SELECT
         -- ps.Session_ID, ps.User_ID,
         -- psgs.Plan_Game_ID
@@ -76,10 +84,14 @@ def get_user_game_results(user_id, game_id):
             rows = result.fetchall()
 
         results = [dict(row._mapping) for row in rows]
-        logger.info(f"Fetched {len(results)} game results for user {user_id} and game {game_id}")
+        logger.info(
+            f"Fetched {len(results)} game results for user {user_id} and game {game_id}"
+        )
         return results
     except Exception as e:
-        logger.error(f"Failed to fetch game results for user {user_id} and game {game_id}: {e}")
+        logger.error(
+            f"Failed to fetch game results for user {user_id} and game {game_id}: {e}"
+        )
         return []
 
 
@@ -88,7 +100,8 @@ def get_user_all_games_results(user_id):
     Get all games played by a specific user across all minigames
     Reuses existing query logic but for all games
     """
-    query = text("""
+    query = text(
+        """
         SELECT
         pg.Level as Level_ID,
         igl.Name as Game_Name,
@@ -103,7 +116,8 @@ def get_user_all_games_results(user_id):
         JOIN ima_game_level as igl ON pg.Level = igl.Level_ID
         WHERE ps.User_ID = :user_id
         ORDER BY igl.Name, psgs.Game_Start
-    """)
+    """
+    )
 
     try:
         with engine.connect() as conn:
@@ -117,20 +131,25 @@ def get_user_all_games_results(user_id):
         logger.error(f"Failed to fetch all game results for user {user_id}: {e}")
         return []
 
+
 def analyze_results(results, analysis_type="single_game"):
     """
     Extended existing analyze_results function to handle both single game and overall assessment
     """
     if analysis_type == "overall_assessment":
         return analyze_overall_assessment(results)
-    
+
     # Existing single game analysis
     all_scores = [r["Score"] for r in results if r["Score"] is not None]
     completed = [r for r in results if r["Status"] == "complete"]
     failed = [r for r in results if r["Status"] == "fail"]
 
     # Create a trend based on order of attempts
-    score_trend = [{"Attempt": f"Attempt {i+1}", "Score": r["Score"]} for i, r in enumerate(results) if r["Score"] is not None]
+    score_trend = [
+        {"Attempt": f"Attempt {i+1}", "Score": r["Score"]}
+        for i, r in enumerate(results)
+        if r["Score"] is not None
+    ]
 
     return {
         "attempts": len(results),
@@ -139,8 +158,9 @@ def analyze_results(results, analysis_type="single_game"):
         "average_score": round(mean(all_scores), 2) if all_scores else 0,
         "min_score": min(all_scores) if all_scores else 0,
         "max_score": max(all_scores) if all_scores else 0,
-        "trend": score_trend
+        "trend": score_trend,
     }
+
 
 def analyze_overall_assessment(results):
     """
@@ -148,52 +168,62 @@ def analyze_overall_assessment(results):
     """
     from collections import defaultdict
     import re
-    
+
     # Group results by game
     games_data = defaultdict(list)
-    
+
     for result in results:
-        if result.get('Score') is not None:
+        if result.get("Score") is not None:
             # Clean game name
-            game_name = re.sub(r'<.*?>', '', result.get('Game_Name', '')).strip()
-            games_data[game_name].append({
-                'score': result['Score'],
-                'status': result['Status']
-            })
-    
+            game_name = re.sub(r"<.*?>", "", result.get("Game_Name", "")).strip()
+            games_data[game_name].append(
+                {"score": result["Score"], "status": result["Status"]}
+            )
+
     # Calculate stats per game
     game_stats = []
     for game_name, game_results in games_data.items():
-        scores = [r['score'] for r in game_results if r['score'] is not None]
+        scores = [r["score"] for r in game_results if r["score"] is not None]
         if scores:
-            game_stats.append({
-                'game_name': game_name,
-                'average_score': round(mean(scores), 2),
-                'total_attempts': len(game_results),
-                'min_score': min(scores),
-                'max_score': max(scores),
-                'completed': len([r for r in game_results if r['status'] == 'complete'])
-            })
-    
+            game_stats.append(
+                {
+                    "game_name": game_name,
+                    "average_score": round(mean(scores), 2),
+                    "total_attempts": len(game_results),
+                    "min_score": min(scores),
+                    "max_score": max(scores),
+                    "completed": len(
+                        [r for r in game_results if r["status"] == "complete"]
+                    ),
+                }
+            )
+
     # Sort by average score (lowest to highest)
-    game_stats.sort(key=lambda x: x['average_score'])
-    
+    game_stats.sort(key=lambda x: x["average_score"])
+
     return {
         "analysis_type": "overall_assessment",
         "total_games": len(game_stats),
-        "overall_average": round(mean([stat['average_score'] for stat in game_stats]), 2) if game_stats else 0,
+        "overall_average": (
+            round(mean([stat["average_score"] for stat in game_stats]), 2)
+            if game_stats
+            else 0
+        ),
         "game_stats": game_stats,
         "chart_data": {
-            'labels': [stat['game_name'] for stat in game_stats],
-            'datasets': [{
-                'label': 'Average Score',
-                'data': [stat['average_score'] for stat in game_stats],
-                'backgroundColor': 'rgba(54, 162, 235, 0.6)',
-                'borderColor': 'rgba(54, 162, 235, 1)',
-                'borderWidth': 1
-            }]
-        }
+            "labels": [stat["game_name"] for stat in game_stats],
+            "datasets": [
+                {
+                    "label": "Average Score",
+                    "data": [stat["average_score"] for stat in game_stats],
+                    "backgroundColor": "rgba(54, 162, 235, 0.6)",
+                    "borderColor": "rgba(54, 162, 235, 1)",
+                    "borderWidth": 1,
+                }
+            ],
+        },
     }
+
 
 def analyze_single_attempt(results, client):
 
@@ -237,43 +267,46 @@ def analyze_single_attempt(results, client):
         model="deepseek-chat",
         messages=[
             {"role": "system", "content": "You are a gameplay data analyst."},
-            {"role": "user", "content": prompt_text}
-        ]
+            {"role": "user", "content": prompt_text},
+        ],
     )
 
     analysis = response.choices[0].message.content
     return analysis
 
+
 def analyze_multiple_attempts(results, client):
-    
+
     summarized_attempts = []
-    
+
     for attempt in results:
         try:
             raw = json.loads(attempt.get("Overall_Results", "{}"))
         except json.JSONDecodeError:
             continue
-    
-        summarized_attempts.append({
-            "Start": attempt.get("Game_Start"),
-            "End": attempt.get("Game_End"),
-            "Status": attempt.get("Status"),
-            "Final Score": raw.get("final-score", 0),
-            "Accuracy (%)": raw.get("accuracy", 0),
-            "Duration (s)": round(raw.get("total-time", 0), 2),
-            "Minor Errors": raw.get("minor-count", 0),
-            "Warnings": raw.get("warning-count", 0),
-            "Severe Errors": raw.get("severe-count", 0),
-            "Good Actions": len(raw.get("errors", {}).get("good", [])),
-            "Minor Actions": len(raw.get("errors", {}).get("minor", [])),
-            "Warning Actions": len(raw.get("errors", {}).get("warning", [])),
-            "Severe Actions": len(raw.get("errors", {}).get("severe", [])),
-        })
-        
+
+        summarized_attempts.append(
+            {
+                "Start": attempt.get("Game_Start"),
+                "End": attempt.get("Game_End"),
+                "Status": attempt.get("Status"),
+                "Final Score": raw.get("final-score", 0),
+                "Accuracy (%)": raw.get("accuracy", 0),
+                "Duration (s)": round(raw.get("total-time", 0), 2),
+                "Minor Errors": raw.get("minor-count", 0),
+                "Warnings": raw.get("warning-count", 0),
+                "Severe Errors": raw.get("severe-count", 0),
+                "Good Actions": len(raw.get("errors", {}).get("good", [])),
+                "Minor Actions": len(raw.get("errors", {}).get("minor", [])),
+                "Warning Actions": len(raw.get("errors", {}).get("warning", [])),
+                "Severe Actions": len(raw.get("errors", {}).get("severe", [])),
+            }
+        )
+
         # If more than 20 attempts, summarize to the first 20
         if len(summarized_attempts) > 20:
             summarized_attempts = summarized_attempts[:20]
-    
+
     prompt_text = f"""
     You are an expert training analyst. Below is a JSON list of gameplay attempts for a training module by the same user. 
     Each object contains the attempt's status, start and end time, final score, and a result field with detailed breakdown.
@@ -298,42 +331,44 @@ def analyze_multiple_attempts(results, client):
         model="deepseek-chat",
         messages=[
             {"role": "system", "content": "You are a gameplay data analyst."},
-            {"role": "user", "content": prompt_text}
-        ]
+            {"role": "user", "content": prompt_text},
+        ],
     )
 
     return response.choices[0].message.content
 
+
 def response_cleanup(response):
     # Remove bold and italic (e.g., **text**, *text*, __text__, _text_)
-    response = re.sub(r'(\*\*|__)(.*?)\1', r'\2', response)
-    response = re.sub(r'(\*|_)(.*?)\1', r'\2', response)
+    response = re.sub(r"(\*\*|__)(.*?)\1", r"\2", response)
+    response = re.sub(r"(\*|_)(.*?)\1", r"\2", response)
 
     # Remove inline code `text`
-    response = re.sub(r'`([^`]*)`', r'\1', response)
+    response = re.sub(r"`([^`]*)`", r"\1", response)
 
     # Remove headings (e.g., ### Title)
-    response = re.sub(r'^\s{0,3}#{1,6}\s*', '', response, flags=re.MULTILINE)
+    response = re.sub(r"^\s{0,3}#{1,6}\s*", "", response, flags=re.MULTILINE)
 
     # Remove horizontal rules (---, ***, etc.)
-    response = re.sub(r'^-{3,}|^\*{3,}|^_{3,}', '', response, flags=re.MULTILINE)
+    response = re.sub(r"^-{3,}|^\*{3,}|^_{3,}", "", response, flags=re.MULTILINE)
 
     # Remove blockquotes
-    response = re.sub(r'^\s{0,3}>\s?', '', response, flags=re.MULTILINE)
+    response = re.sub(r"^\s{0,3}>\s?", "", response, flags=re.MULTILINE)
 
     # Remove links but keep the text [text](url) -> text
-    response = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', response)
+    response = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", response)
 
     # Remove images ![alt](url) -> alt
-    response = re.sub(r'!\[([^\]]*)\]\([^)]+\)', r'\1', response)
+    response = re.sub(r"!\[([^\]]*)\]\([^)]+\)", r"\1", response)
 
     # Remove inline HTML tags (e.g., <b>, <i>)
-    response = re.sub(r'<[^>]+>', '', response)
+    response = re.sub(r"<[^>]+>", "", response)
 
     # Normalize extra whitespace
-    response = re.sub(r'\n{3,}', '\n\n', response)
+    response = re.sub(r"\n{3,}", "\n\n", response)
 
     return response.strip()
+
 
 def trim_first_and_last_line(text: str) -> str:
     lines = text.strip().splitlines()
@@ -341,6 +376,7 @@ def trim_first_and_last_line(text: str) -> str:
         return ""  # Not enough content to trim
     trimmed = "\n".join(lines[1:-1])
     return trimmed.strip()
+
 
 # Deduplication helper
 def deduplicate(entries):
@@ -353,13 +389,16 @@ def deduplicate(entries):
             result.append({"text": entry.get("text"), "type": entry.get("type")})
     return result
 
+
 def fetch_user_errors(user_id):
-    query = text("""
+    query = text(
+        """
         SELECT GS.results
         FROM ima_plan_session_game_status AS GS
         INNER JOIN ima_plan_session AS PS ON GS.Session_ID = PS.Session_ID
         WHERE PS.User_ID = :user_id;
-    """)
+    """
+    )
 
     try:
         with engine.connect() as conn:
@@ -393,20 +432,15 @@ def fetch_user_errors(user_id):
             "imprecision": all_imprecision,
             "warning": all_warning,
             "minor": all_minor,
-            "severe": all_severe
+            "severe": all_severe,
         }
 
     except Exception as e:
         logger.error(f"Failed to fetch user errors for user {user_id}: {e}")
-        return {
-            "imprecision": [],
-            "warning": [],
-            "minor": [],
-            "severe": []
-        }
+        return {"imprecision": [], "warning": [], "minor": [], "severe": []}
 
 
-def categorize_mistakes(errors , client):
+def categorize_mistakes(errors, client):
     prompt_text = f"""
     The data below shows the text and types of errors that a user has made:
 
@@ -422,10 +456,10 @@ def categorize_mistakes(errors , client):
         model="deepseek-chat",
         messages=[
             {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt_text}
-        ]
+            {"role": "user", "content": prompt_text},
+        ],
     )
-    
+
     raw_output = response.choices[0].message.content
     cleaned_ouput = response_cleanup(raw_output)
     final_output = trim_first_and_last_line(cleaned_ouput)
