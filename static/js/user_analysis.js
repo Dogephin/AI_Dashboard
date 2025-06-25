@@ -445,6 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             fullAnalysisBtn.addEventListener('click', () => {
                                 const downloadBtn = document.getElementById('btn-download-analysis');
+                                const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                if (cancelBtn) {
+                                    cancelBtn.classList.remove('d-none');  // Show cancel button initially
+                                }
                                 if (downloadBtn) {
                                     downloadBtn.classList.add('d-none');  // Hide download button initially
                                 }
@@ -476,6 +480,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 `;
                                         // Enable download button
                                         const downloadBtn = document.getElementById('btn-download-analysis');
+                                        const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                        if (cancelBtn) {
+                                            cancelBtn.classList.add('d-none');  // Hide cancel button after analysis
+                                        }
                                         if (downloadBtn) {
                                             if (result && result.trim() !== '') {
                                                 downloadBtn.classList.remove('d-none');  // Show button
@@ -589,6 +597,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             document.querySelectorAll('.analyze-btn').forEach(btn => {
                                 btn.addEventListener('click', () => {
                                     const downloadBtn = document.getElementById('btn-download-analysis');
+                                    const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                    if (cancelBtn) {
+                                        cancelBtn.classList.remove('d-none');  // Show cancel button initially
+                                    }
                                     if (downloadBtn) {
                                         downloadBtn.classList.add('d-none');  // Hide download button initially
                                     }
@@ -627,6 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                         `;
                                             // Enable download button
                                             const downloadBtn = document.getElementById('btn-download-analysis');
+                                            const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                            if (cancelBtn) {
+                                                cancelBtn.classList.add('d-none');  // Hide cancel button after analysis
+                                            }
                                             if (downloadBtn) {
                                                 if (result && result.trim() !== '') {
                                                     downloadBtn.classList.remove('d-none');  // Show button

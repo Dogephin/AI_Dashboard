@@ -724,3 +724,101 @@ canvas {
         padding: 0.5rem;
     }
 }
+
+/* Modal Buttons */
+
+#btn-download-analysis,
+#btn-cancel-analysis {
+    position: relative;
+    width: 140px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border: 1px solid #17795E;
+    background-color: #209978;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+#btn-cancel-analysis {
+    border: 1px solid #cc0000;
+    background-color: #e50000;
+    width: 120px;
+}
+
+#btn-download-analysis .button__icon,
+#btn-download-analysis .button__text,
+#btn-cancel-analysis .button__icon,
+#btn-cancel-analysis .button__text {
+    transition: all 0.3s;
+}
+
+#btn-download-analysis .button__text,
+#btn-cancel-analysis .button__text {
+    transform: translateX(10px);
+    color: #fff;
+    font-weight: 600;
+}
+
+#btn-download-analysis .button__icon,
+#btn-cancel-analysis .button__icon {
+    position: absolute;
+    transform: translateX(95px);
+    height: 100%;
+    width: 39px;
+    background-color: #17795E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#btn-cancel-analysis .button__icon {
+    background-color: #cc0000;
+    transform: translateX(75px);
+}
+
+#btn-download-analysis .svg,
+#btn-cancel-analysis .svg {
+    width: 20px;
+    fill: #fff;
+}
+
+#btn-download-analysis:hover {
+    background: #17795E;
+}
+
+#btn-cancel-analysis:hover {
+    background: #cc0000;
+}
+
+#btn-download-analysis:hover .button__text,
+#btn-cancel-analysis:hover .button__text {
+    color: transparent;
+}
+
+#btn-download-analysis:hover .button__icon {
+    width: 140px;
+    transform: translateX(0);
+}
+
+#btn-cancel-analysis:hover .button__icon {
+    width: 120px;
+    transform: translateX(0);
+}
+
+#btn-download-analysis:active .button__icon {
+    background-color: #146c54;
+}
+
+#btn-cancel-analysis:active .button__icon {
+    background-color: #b20000;
+}
+
+#btn-download-analysis:active {
+    border: 1px solid #146c54;
+}
+
+#btn-cancel-analysis:active {
+    border: 1px solid #b20000;
+}
