@@ -10,6 +10,8 @@ import datetime
 
 app = Flask(__name__)
 
+app.config["AI-TYPE"] = "API"  # Default to API mode
+
 test_db_connection()
 llm_client = create_llm_client()
 
@@ -346,9 +348,20 @@ def mistakes():
     )
 
 
-@app.route("/settings")
+@app.route("/settings", methods=["GET", "POST"])
 def settings():
-    return render_template("settings.html")
+    if request.method == "POST":
+        # If toggle is toggled, value will be "API", if unchecked, set to "LOCAL"
+        ai_type = request.form.get("ai_type", "LOCAL").upper()
+        if ai_type not in ["API", "LOCAL"]:
+            ai_type = "LOCAL"
+        app.config["AI-TYPE"] = ai_type
+        return jsonify(
+            {"message": f"Settings saved successfully. AI type set to {ai_type}."}
+        )
+
+    print(f"Current AI type: {app.config['AI-TYPE']}")
+    return render_template("settings.html", ai_type=app.config["AI-TYPE"])
 
 
 if __name__ == "__main__":
