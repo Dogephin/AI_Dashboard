@@ -822,3 +822,52 @@ canvas {
 #btn-cancel-analysis:active {
     border: 1px solid #b20000;
 }
+
+/* Settings Button on Home Page */
+
+.settings-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 2rem;
+}
+
+#settings-button.button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 12px;
+    gap: 8px;
+    height: 36px;
+    width: 120px;
+    border: none;
+    background: #5e41de33;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+#settings-button .lable {
+    line-height: 20px;
+    font-size: 17px;
+    color: #5D41DE;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+}
+
+#settings-button.button:hover {
+    background: #5e41de4d;
+}
+
+#settings-button.button:hover .svg-icon {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
