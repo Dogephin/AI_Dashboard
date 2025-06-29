@@ -10,16 +10,24 @@ import datetime
 
 app = Flask(__name__)
 
-app.config["AI-TYPE"] = "API"  # Default to API mode
+app.config["AI-TYPE"] = "API"  # Default to API model
 app.config["AI-MODEL"] = ""  # Default to no model
 
 test_db_connection()
-llm_client = llm.create_llm_client()
+# llm_client = llm.create_llm_client()
 
 logging.basicConfig(
     level=logging.INFO,  # or DEBUG for more detail
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
+
+def get_llm_client():
+    ai_type = app.config.get("AI-TYPE", "API")
+    ai_model = app.config.get("AI-MODEL", "") if ai_type == "LOCAL" else None
+    return llm.create_llm_client(type=ai_type, model=ai_model)
+
+llm_client = get_llm_client()
 
 
 @app.route("/")
@@ -351,6 +359,8 @@ def mistakes():
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
+    global llm_client
+    
     if request.method == "POST":
         # If toggle is toggled, value will be "API", if unchecked, set to "LOCAL"
         ai_type = request.form.get("ai_type", "LOCAL").upper()
@@ -365,6 +375,8 @@ def settings():
         message = f"Settings saved successfully. AI type set to {ai_type}."
         if ai_type == "LOCAL" and ai_model:
             message += f" Model set to {ai_model}."
+            
+        llm_client = get_llm_client()
 
         return jsonify({"message": message})
 

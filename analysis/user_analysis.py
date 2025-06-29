@@ -258,21 +258,25 @@ def analyze_single_attempt(results, client):
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
     No overall title is needed, just start with the main paragraphs and its headings.
 
+    Your response must be in English language.
 
     Here is the data:
     {json.dumps(results, indent=2)}
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a gameplay data analyst."},
-            {"role": "user", "content": prompt_text},
-        ],
-    )
-
-    analysis = response.choices[0].message.content
-    return analysis
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        return client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        return response.choices[0].message.content
 
 
 def analyze_multiple_attempts(results, client):

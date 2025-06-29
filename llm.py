@@ -2,21 +2,49 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import subprocess
+import requests
 
 load_dotenv()
 
 
-def create_llm_client():
-    try:
-        client = OpenAI(
-            api_key=os.getenv("DEEPSEEK_API_KEY"),
-            base_url="https://api.deepseek.com/v1",
-        )
-        print("LLM client created.")
-        return client
-    except Exception as e:
-        print("Failed to initialize LLM:", e)
-        raise
+def create_llm_client(type="API", model=None):
+
+    print(f"Creating LLM client of type: {type} with model: {model}")
+
+    if type == "API":
+        try:
+            client = OpenAI(
+                api_key=os.getenv("DEEPSEEK_API_KEY"),
+                base_url="https://api.deepseek.com/v1",
+            )
+            print("LLM client created.")
+            return client
+
+        except Exception as e:
+            print("Failed to initialize LLM:", e)
+            raise
+
+    elif type == "LOCAL":
+        if not model:
+            raise ValueError("No model name provided for LOCAL LLM")
+
+        else:
+            print(f"LLM client created. Using local model: {model}")
+
+        def local_llm(prompt):
+            payload = {"model": model, "prompt": prompt, "stream": False}
+            try:
+                response = requests.post(
+                    "http://localhost:11434/api/generate", json=payload
+                )
+                response.raise_for_status()
+                result = response.json()
+                return result.get("response", "").strip()
+            except Exception as e:
+                print("Local LLM error:", e)
+                raise
+
+        return local_llm
 
 
 def get_models():
