@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, jsonify
-from llm import create_llm_client
+import llm as llm
 from db import test_db_connection
 from analysis import overall_analysis as oa
 from analysis import user_analysis as ua
@@ -11,9 +11,10 @@ import datetime
 app = Flask(__name__)
 
 app.config["AI-TYPE"] = "API"  # Default to API mode
+app.config["AI-MODEL"] = ""  # Default to no model
 
 test_db_connection()
-llm_client = create_llm_client()
+llm_client = llm.create_llm_client()
 
 logging.basicConfig(
     level=logging.INFO,  # or DEBUG for more detail
@@ -353,15 +354,33 @@ def settings():
     if request.method == "POST":
         # If toggle is toggled, value will be "API", if unchecked, set to "LOCAL"
         ai_type = request.form.get("ai_type", "LOCAL").upper()
+        ai_model = request.form.get("ai_model", "")
+
         if ai_type not in ["API", "LOCAL"]:
             ai_type = "LOCAL"
+
         app.config["AI-TYPE"] = ai_type
-        return jsonify(
-            {"message": f"Settings saved successfully. AI type set to {ai_type}."}
-        )
+        app.config["AI-MODEL"] = ai_model if ai_type == "LOCAL" else ""
+
+        message = f"Settings saved successfully. AI type set to {ai_type}."
+        if ai_type == "LOCAL" and ai_model:
+            message += f" Model set to {ai_model}."
+
+        return jsonify({"message": message})
 
     print(f"Current AI type: {app.config['AI-TYPE']}")
-    return render_template("settings.html", ai_type=app.config["AI-TYPE"])
+    print(
+        f"Current AI model: {app.config['AI-MODEL']}"
+        if app.config["AI-TYPE"] == "LOCAL"
+        else "Current AI model: N/A"
+    )
+
+    return render_template(
+        "settings.html",
+        ai_type=app.config["AI-TYPE"],
+        models=llm.get_models(),
+        selected_model=app.config["AI-MODEL"],
+    )
 
 
 if __name__ == "__main__":
