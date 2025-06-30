@@ -74,6 +74,10 @@ def get_models():
                 if model_name.startswith("deepseek"):
                     deepseek_models.append(model_name)
 
+        # Arrange models by size in ascending order
+        if deepseek_models:
+            deepseek_models = sorted(deepseek_models, key=lambda x: int(x.split(':')[1].replace('b', '')))
+        
         print(deepseek_models if deepseek_models else "No DeepSeek models found.")
         return deepseek_models
 
