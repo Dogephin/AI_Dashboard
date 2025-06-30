@@ -314,7 +314,7 @@ def user():
             # single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client)) # with cleanup
 
             single_attempt_analysis_response = ua.analyze_single_attempt(
-                row_data, llm_client
+                row_data, get_llm_client()
             )
 
             # ? For debugging, can remove this later
@@ -337,7 +337,7 @@ def user():
             # with open(all_attempts_filename, 'w') as f:
             #     json.dump(all_attempts, f, indent=4)
 
-            bulk_analysis = ua.analyze_multiple_attempts(all_attempts, llm_client)
+            bulk_analysis = ua.analyze_multiple_attempts(all_attempts, get_llm_client())
             return jsonify(
                 {
                     "message": "AI Analysis for all attempts completed.",

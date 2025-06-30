@@ -331,15 +331,19 @@ def analyze_multiple_attempts(results, client):
     {json.dumps(summarized_attempts, indent=2)}
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a gameplay data analyst."},
-            {"role": "user", "content": prompt_text},
-        ],
-    )
-
-    return response.choices[0].message.content
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        return client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        return response.choices[0].message.content
 
 
 def response_cleanup(response):
