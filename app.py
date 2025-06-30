@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, g
 import llm as llm
 from db import test_db_connection
 from analysis import overall_analysis as oa
@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config["AI-TYPE"] = "API"  # Default to API model
 app.config["AI-MODEL"] = ""  # Default to no model
 
-test_db_connection()
+# test_db_connection()
 # llm_client = llm.create_llm_client()
 
 logging.basicConfig(
@@ -23,11 +23,15 @@ logging.basicConfig(
 
 
 def get_llm_client():
-    ai_type = app.config.get("AI-TYPE", "API")
-    ai_model = app.config.get("AI-MODEL", "") if ai_type == "LOCAL" else None
-    return llm.create_llm_client(type=ai_type, model=ai_model)
+    if "llm_client" not in g:
+        ai_type = app.config.get("AI-TYPE", "API")
+        ai_model = app.config.get("AI-MODEL", "") if ai_type == "LOCAL" else None
+        g.llm_client = llm.create_llm_client(type=ai_type, model=ai_model)
+    return g.llm_client
 
-llm_client = get_llm_client()
+
+# ? Call this function when needed
+# llm_client = get_llm_client()
 
 
 @app.route("/")
@@ -359,24 +363,27 @@ def mistakes():
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
-    global llm_client
-    
+
     if request.method == "POST":
         # If toggle is toggled, value will be "API", if unchecked, set to "LOCAL"
         ai_type = request.form.get("ai_type", "LOCAL").upper()
         ai_model = request.form.get("ai_model", "")
+
+        if ai_type == "LOCAL":
+            available_models = llm.get_models()
+            if ai_model not in available_models:
+                return jsonify({"message": f"Model '{ai_model}' not found."}), 400
 
         if ai_type not in ["API", "LOCAL"]:
             ai_type = "LOCAL"
 
         app.config["AI-TYPE"] = ai_type
         app.config["AI-MODEL"] = ai_model if ai_type == "LOCAL" else ""
+        g.pop("llm_client", None)
 
         message = f"Settings saved successfully. AI type set to {ai_type}."
         if ai_type == "LOCAL" and ai_model:
             message += f" Model set to {ai_model}."
-            
-        llm_client = get_llm_client()
 
         return jsonify({"message": message})
 
@@ -396,4 +403,5 @@ def settings():
 
 
 if __name__ == "__main__":
+    test_db_connection()
     app.run(debug=True)

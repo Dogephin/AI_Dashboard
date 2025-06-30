@@ -25,6 +25,9 @@ def create_llm_client(type="API", model=None):
             raise
 
     elif type == "LOCAL":
+        if not is_ollama_running():
+            raise RuntimeError("Ollama server is not running at http://localhost:11434")
+
         if not model:
             raise ValueError("No model name provided for LOCAL LLM")
 
@@ -32,14 +35,18 @@ def create_llm_client(type="API", model=None):
             print(f"LLM client created. Using local model: {model}")
 
         def local_llm(prompt):
-            payload = {"model": model, "prompt": prompt, "stream": False}
+            messages = [
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt},
+            ]
+            payload = {"model": model, "messages": messages, "stream": False}
             try:
                 response = requests.post(
-                    "http://localhost:11434/api/generate", json=payload
+                    "http://localhost:11434/api/chat", json=payload
                 )
                 response.raise_for_status()
                 result = response.json()
-                return result.get("response", "").strip()
+                return result.get("message", {}).get("content", "").strip()
             except Exception as e:
                 print("Local LLM error:", e)
                 raise
@@ -75,3 +82,11 @@ def get_models():
         print("STDOUT:", e.stdout)
         print("STDERR:", e.stderr)
         return []  # return an empty list on failure
+
+
+def is_ollama_running():
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=2)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
