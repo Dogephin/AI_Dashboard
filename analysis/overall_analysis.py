@@ -87,15 +87,20 @@ def error_frequency_analysis(results, client):
     Please keep it as short and concise with clear titles.
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt_text},
-        ],
-    )
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        insights_text = client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        insights_text = response.choices[0].message.content
 
-    insights_text = response.choices[0].message.content
     cleaned_insights_frequency_score = clear_formatting(insights_text)
     return cleaned_insights_frequency_score
 
@@ -129,14 +134,20 @@ def overall_user_analysis(results2, client):
 
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt_text},
-        ],
-    )
-    insights_text = response.choices[0].message.content
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        insights_text = client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        insights_text = response.choices[0].message.content
+
     cleaned_insights_overall_score = clear_formatting(insights_text)
     print("hello", cleaned_insights_overall_score)
     return cleaned_insights_overall_score
@@ -195,14 +206,20 @@ def performance_vs_duration(data, client):
     Provide concise and short analysis with bullet points or numbered insights.
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt},
-        ],
-    )
-    insights_text = response.choices[0].message.content
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        insights_text = client(prompt)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        insights_text = response.choices[0].message.content
+
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 
@@ -358,15 +375,20 @@ def avg_scores_for_practice_assessment_analysis(
     Format the response as a list of insights, number each title accordingly. Please end your response immediately after giving the response to the above.
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt},
-        ],
-    )
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        insights_text = client(prompt)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        insights_text = response.choices[0].message.content
 
-    insights_text = response.choices[0].message.content
     print("average score one", insights_text)
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score

@@ -460,15 +460,20 @@ def categorize_mistakes(errors, client):
 
     Ensure that the texts are kept exactly the same
     """
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a data analyst."},
-            {"role": "user", "content": prompt_text},
-        ],
-    )
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        raw_output = client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        raw_output = response.choices[0].message.content
 
-    raw_output = response.choices[0].message.content
     cleaned_ouput = response_cleanup(raw_output)
     final_output = trim_first_and_last_line(cleaned_ouput)
 

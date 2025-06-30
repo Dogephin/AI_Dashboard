@@ -215,14 +215,19 @@ def ai_summary_for_minigame(game_name: str, summary_stats: dict, errors: dict, c
     Use plain paragraphs, no markdown headings, no bullet symbols.
     """
 
-    response = client.chat.completions.create(
-        model="deepseek-chat",
-        messages=[
-            {"role": "system", "content": "You are a gameplay data analyst."},
-            {"role": "user", "content": prompt.strip()},
-        ],
-    )
-    return cleanup_llm_response(response.choices[0].message.content)
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        return cleanup_llm_response(client(prompt.strip()))
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt.strip()},
+            ],
+        )
+        return cleanup_llm_response(response.choices[0].message.content)
 
 
 # Helper similar to response_cleanup in user_analysis.py

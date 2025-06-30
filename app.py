@@ -46,7 +46,7 @@ def api_avg_scores_analysis():
         return jsonify([])
 
     text = oa.avg_scores_for_practice_assessment_analysis(
-        avg_scores, max_score_by_minigame, llm_client
+        avg_scores, max_score_by_minigame, get_llm_client()
     )
     return jsonify(text)
 
@@ -57,7 +57,7 @@ def api_error_frequency_analysis():
     if not results:
         return jsonify({"text": "No data found."})
 
-    analysis_response = oa.error_frequency_analysis(results, llm_client)
+    analysis_response = oa.error_frequency_analysis(results, get_llm_client())
     # text = oa.extract_relevant_text(analysis_response)
     return jsonify(analysis_response)
 
@@ -68,7 +68,7 @@ def api_performance_duration_analysis():
     if not duration_data:
         return jsonify({"text": "No session duration data available."})
 
-    text = oa.performance_vs_duration(duration_data, llm_client)
+    text = oa.performance_vs_duration(duration_data, get_llm_client())
     return jsonify(text)
 
 
@@ -78,7 +78,7 @@ def api_overall_user_analysis():
     if not results2:
         return jsonify({"text": "No user data available."})
 
-    text = oa.overall_user_analysis(results2, llm_client)
+    text = oa.overall_user_analysis(results2, get_llm_client())
     return jsonify(text)
 
 
@@ -228,7 +228,7 @@ def api_minigame_ai_summary(game_id):
     )
 
     analysis_text = mg.ai_summary_for_minigame(
-        game_name, summary_stats, error_buckets, llm_client
+        game_name, summary_stats, error_buckets, get_llm_client()
     )
 
     return jsonify({"analysis": analysis_text})
@@ -355,7 +355,7 @@ def user():
 def mistakes():
     data = request.get_json()
     items = data.get("items", [])
-    mistake_categories = ua.categorize_mistakes(items, llm_client)
+    mistake_categories = ua.categorize_mistakes(items, get_llm_client())
     return jsonify(
         {"message": "AI Categorization Completed.", "Categories": mistake_categories}
     )
@@ -374,12 +374,14 @@ def settings():
             if ai_model not in available_models:
                 return jsonify({"message": f"Model '{ai_model}' not found."}), 400
 
-        if ai_type not in ["API", "LOCAL"]:
-            ai_type = "LOCAL"
+        current_type = app.config.get("AI-TYPE")
+        current_model = app.config.get("AI-MODEL")
 
-        app.config["AI-TYPE"] = ai_type
-        app.config["AI-MODEL"] = ai_model if ai_type == "LOCAL" else ""
-        g.pop("llm_client", None)
+        # Only update if something changed
+        if current_type != ai_type or current_model != ai_model:
+            app.config["AI-TYPE"] = ai_type
+            app.config["AI-MODEL"] = ai_model if ai_type == "LOCAL" else ""
+            g.pop("llm_client", None)  # Invalidate the per-request client cache
 
         message = f"Settings saved successfully. AI type set to {ai_type}."
         if ai_type == "LOCAL" and ai_model:
