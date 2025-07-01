@@ -56,6 +56,11 @@ def create_llm_client(type="API", model=None):
 
 def get_models():
     ollama_path = os.getenv("OLLAMA_PATH")
+
+    if not ollama_path:
+        print("Error: OLLAMA_PATH not set in environment variables.")
+        return []
+
     if not os.path.exists(ollama_path):
         print(f"Error: Ollama executable not found at {ollama_path}")
         return []  # return empty list
@@ -76,8 +81,10 @@ def get_models():
 
         # Arrange models by size in ascending order
         if deepseek_models:
-            deepseek_models = sorted(deepseek_models, key=lambda x: int(x.split(':')[1].replace('b', '')))
-        
+            deepseek_models = sorted(
+                deepseek_models, key=lambda x: int(x.split(":")[1].replace("b", ""))
+            )
+
         print(deepseek_models if deepseek_models else "No DeepSeek models found.")
         return deepseek_models
 
