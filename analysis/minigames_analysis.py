@@ -28,7 +28,7 @@ from statistics import mean
 
 from sqlalchemy import text
 
-from db import engine  # existing module in your project
+from utils.db import engine  # existing module in your project
 
 logger = logging.getLogger(__name__)
 

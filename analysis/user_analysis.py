@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from db import engine
+from utils.db import engine
 import json
 import logging
 import re

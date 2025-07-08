@@ -1,20 +1,21 @@
+from flask import current_app
 import os
-from dotenv import load_dotenv
 from openai import OpenAI
 import subprocess
 import requests
 
-load_dotenv()
-
 
 def create_llm_client(type="API", model=None):
 
-    print(f"Creating LLM client of type: {type} with model: {model}")
+    print(
+        f"Creating LLM client of type: {type}"
+        + (f" with model: {model}" if type == "LOCAL" else "")
+    )
 
     if type == "API":
         try:
             client = OpenAI(
-                api_key=os.getenv("DEEPSEEK_API_KEY"),
+                api_key=current_app.config.get("DEEPSEEK_API_KEY"),
                 base_url="https://api.deepseek.com/v1",
             )
             print("LLM client created.")
@@ -55,7 +56,7 @@ def create_llm_client(type="API", model=None):
 
 
 def get_models():
-    ollama_path = os.getenv("OLLAMA_PATH")
+    ollama_path = current_app.config.get("OLLAMA_PATH")
 
     if not ollama_path:
         print("Error: OLLAMA_PATH not set in environment variables.")

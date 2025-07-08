@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
-from config import DB_URI
+from config import Config
 
-engine = create_engine(DB_URI)
+engine = create_engine(Config.DB_URI)
+
 
 def test_db_connection():
     try:
