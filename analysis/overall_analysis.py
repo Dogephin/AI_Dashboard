@@ -74,6 +74,8 @@ def error_frequency_analysis(results, client):
     binned_data_json = json.dumps(binned_data, indent=2)
 
     prompt_text = f"""
+    You are an expert training analyst.
+
     I have aggregated the warning, minor and severe errors from multiple game sessions into 5-second time bins.
     The data below shows the count of warnings and minors occurring in each time interval over the entire session duration:
 
@@ -124,6 +126,7 @@ def get_user_results():
 
 def overall_user_analysis(results2, client):
     prompt_text = f"""
+    You are an expert training analyst.
     I have collected the overall data of all users. Here is the data:
 
     {results2}
@@ -194,6 +197,7 @@ def performance_vs_duration(data, client):
     json_data = json.dumps(data, indent=2)
 
     prompt = f"""
+    You are an expert training analyst.
     Below is training session data showing session duration (in minutes) and the score achieved:
 
     {json_data}
@@ -350,6 +354,7 @@ def avg_scores_for_practice_assessment_analysis(
     formatted_data = json.dumps(combined_scores, indent=2)
 
     prompt = f"""
+    You are an expert training analyst.
     I have collected the average and maximum scores achieved across multiple minigames during training sessions.
 
     Each minigame has an average score based on all user sessions, and a max score representing the best possible performance.

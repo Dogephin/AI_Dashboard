@@ -450,6 +450,7 @@ def fetch_user_errors(user_id):
 
 def categorize_mistakes(errors, client):
     prompt_text = f"""
+    You are an expert training analyst.
     The data below shows the text and types of errors that a user has made:
 
     {errors}

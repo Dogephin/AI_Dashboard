@@ -198,7 +198,7 @@ def ai_summary_for_minigame(game_name: str, summary_stats: dict, errors: dict, c
     Call your LLM client to produce a natural-language executive summary.
     """
     prompt = f"""
-    You are an expert learning-analytics consultant.
+    You are an expert training analyst.
 
     The mini-game **{game_name}** has the following aggregated metrics:
     {json.dumps(summary_stats, indent=2)}
