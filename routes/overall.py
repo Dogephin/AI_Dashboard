@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from analysis import overall_analysis as oa
 from utils.context import get_llm_client
+from utils.cache import generate_cache_key, cache
 
 overall_bp = Blueprint("overall", __name__, template_folder="templates")
 
@@ -11,10 +12,20 @@ def api_avg_scores_analysis():
     if not avg_scores:
         return jsonify([])
 
-    text = oa.avg_scores_for_practice_assessment_analysis(
-        avg_scores, max_score_by_minigame, get_llm_client()
+    # Cache the average scores analysis
+    key = generate_cache_key(
+        "avg_scores_analysis",
+        {"avg_scores": avg_scores, "max_score_by_minigame": max_score_by_minigame},
     )
-    return jsonify(text)
+    avg_scores_analysis_response = cache.get(key)
+
+    if not avg_scores_analysis_response:
+        avg_scores_analysis_response = oa.avg_scores_for_practice_assessment_analysis(
+            avg_scores, max_score_by_minigame, get_llm_client()
+        )
+        cache.set(key, avg_scores_analysis_response)
+
+    return jsonify(avg_scores_analysis_response)
 
 
 @overall_bp.route("/api/analysis/error-frequency")
@@ -23,9 +34,17 @@ def api_error_frequency_analysis():
     if not results:
         return jsonify({"text": "No data found."})
 
-    analysis_response = oa.error_frequency_analysis(results, get_llm_client())
-    # text = oa.extract_relevant_text(analysis_response)
-    return jsonify(analysis_response)
+    # Cache the error frequency analysis
+    key = generate_cache_key("error_frequency_analysis", {"results": results})
+    error_frequency_analysis_response = cache.get(key)
+
+    if not error_frequency_analysis_response:
+        error_frequency_analysis_response = oa.error_frequency_analysis(
+            results, get_llm_client()
+        )
+        cache.set(key, error_frequency_analysis_response)
+
+    return jsonify(error_frequency_analysis_response)
 
 
 @overall_bp.route("/api/analysis/performance-duration")
@@ -34,8 +53,19 @@ def api_performance_duration_analysis():
     if not duration_data:
         return jsonify({"text": "No session duration data available."})
 
-    text = oa.performance_vs_duration(duration_data, get_llm_client())
-    return jsonify(text)
+    # Cache the performance duration analysis
+    key = generate_cache_key(
+        "performance_duration_analysis", {"duration_data": duration_data}
+    )
+    performance_duration_analysis_response = cache.get(key)
+
+    if not performance_duration_analysis_response:
+        performance_duration_analysis_response = oa.performance_vs_duration(
+            duration_data, get_llm_client()
+        )
+        cache.set(key, performance_duration_analysis_response)
+
+    return jsonify(performance_duration_analysis_response)
 
 
 @overall_bp.route("/api/analysis/overall-user")
@@ -44,8 +74,17 @@ def api_overall_user_analysis():
     if not results2:
         return jsonify({"text": "No user data available."})
 
-    text = oa.overall_user_analysis(results2, get_llm_client())
-    return jsonify(text)
+    # Cache the overall user analysis
+    key = generate_cache_key("overall_user_analysis", {"results": results2})
+    overall_user_analysis_response = cache.get(key)
+
+    if not overall_user_analysis_response:
+        overall_user_analysis_response = oa.overall_user_analysis(
+            results2, get_llm_client()
+        )
+        cache.set(key, overall_user_analysis_response)
+
+    return jsonify(overall_user_analysis_response)
 
 
 @overall_bp.route("/overall")
