@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from analysis import user_analysis as ua
 from utils.context import get_llm_client
-from utils.cache import cache
-from utils.cache import generate_cache_key
+from utils.cache import cache, generate_cache_key
 
 import json
 import datetime

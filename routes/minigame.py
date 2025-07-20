@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from analysis import minigames_analysis as mg
 from utils.context import get_llm_client
+from utils.cache import cache, generate_cache_key
 
 minigame_bp = Blueprint("minigame", __name__, template_folder="templates")
 
@@ -65,8 +66,21 @@ def api_minigame_ai_summary(game_id):
         f"Minigame {game_id}",
     )
 
-    analysis_text = mg.ai_summary_for_minigame(
-        game_name, summary_stats, error_buckets, get_llm_client()
+    # Caching the analysis to avoid repeated LLM calls
+    key = generate_cache_key(
+        "minigame_ai_summary",
+        {
+            "game_id": game_id,
+            "summary_stats": summary_stats,
+            "error_buckets": error_buckets,
+        },
     )
+    analysis_text = cache.get(key)
+
+    if not analysis_text:
+        analysis_text = mg.ai_summary_for_minigame(
+            game_name, summary_stats, error_buckets, get_llm_client()
+        )
+        cache.set(key, analysis_text)
 
     return jsonify({"analysis": analysis_text})

@@ -88,13 +88,13 @@
     <div class="modal fade" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="statsModalLabel">Game Stats</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="statsModalBody">
-                <p>Loading game statistics...</p>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statsModalLabel">Game Stats</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statsModalBody">
+                    <p>Loading game statistics...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -103,13 +103,13 @@
     <div class="modal fade" id="aiModal" tabindex="-1" aria-labelledby="aiModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="aiModalLabel">AI-Generated Summary</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="aiModalBody">
-                <p>Loading...</p>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aiModalLabel">AI-Generated Summary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="aiModalBody">
+                    <p>Loading...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -120,18 +120,45 @@
 
     <!-- Helper function to show stats modal -->
     <script>
+        let statsModalInstance = null;
+
         function showStatsModal(htmlContent) {
             const modalBody = document.getElementById('statsModalBody');
             modalBody.innerHTML = htmlContent;
-            const modal = new bootstrap.Modal(document.getElementById('statsModal'));
-            modal.show();
+
+            if (!statsModalInstance) {
+                statsModalInstance = new bootstrap.Modal(document.getElementById('statsModal'), {
+                    backdrop: true
+                });
+            }
+
+            statsModalInstance.show();
         }
+
+        let aiModalInstance = null;
+
         function showAiModal(htmlContent) {
             const body = document.getElementById('aiModalBody');
             body.innerHTML = htmlContent;
-            const modal = new bootstrap.Modal(document.getElementById('aiModal'));
-            modal.show();
+
+            if (!aiModalInstance) {
+                aiModalInstance = new bootstrap.Modal(document.getElementById('aiModal'), {
+                    backdrop: true
+                });
+            }
+
+            aiModalInstance.show();
         }
+
+        document.getElementById('statsModal').addEventListener('hidden.bs.modal', () => {
+            statsModalInstance = null;
+        });
+
+        document.getElementById('aiModal').addEventListener('hidden.bs.modal', () => {
+            aiModalInstance = null;
+        });
+
+
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
