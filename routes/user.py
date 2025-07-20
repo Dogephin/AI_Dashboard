@@ -82,6 +82,7 @@ def user():
         elif "row_analysis" in payload:
             # Handle row analysis
             row_data = payload["row_analysis"]
+            force_refresh = payload.get("force_refresh", False)
 
             # ? For debugging, can remove this later
             # print("\nAnalyzing individual row:\n")
@@ -89,7 +90,11 @@ def user():
             # single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client)) # with cleanup
 
             key = generate_cache_key("row_analysis", row_data)
-            single_attempt_analysis_response = cache.get(key)
+
+            if not force_refresh:
+                single_attempt_analysis_response = cache.get(key)
+            else:
+                single_attempt_analysis_response = None  # force regenerate
 
             if not single_attempt_analysis_response:
                 single_attempt_analysis_response = ua.analyze_single_attempt(
@@ -110,9 +115,14 @@ def user():
 
         elif "bulk_analysis" in payload:
             all_attempts = payload["bulk_analysis"]
+            force_refresh = payload.get("force_refresh", False)
 
             key = generate_cache_key("bulk_analysis", all_attempts)
-            bulk_analysis = cache.get(key)
+
+            if not force_refresh:
+                bulk_analysis = cache.get(key)
+            else:
+                bulk_analysis = None  # force regenerate
 
             # ? For debugging, save the attempts to a file wth a timestamp
             # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

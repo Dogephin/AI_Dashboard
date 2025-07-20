@@ -446,22 +446,26 @@ document.addEventListener('DOMContentLoaded', () => {
                             fullAnalysisBtn.addEventListener('click', () => {
                                 const downloadBtn = document.getElementById('btn-download-analysis');
                                 const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                const regenerateBtn = document.getElementById("btn-regenerate-analysis");
                                 if (cancelBtn) {
                                     cancelBtn.classList.remove('d-none');  // Show cancel button initially
                                 }
                                 if (downloadBtn) {
                                     downloadBtn.classList.add('d-none');  // Hide download button initially
                                 }
+                                if (regenerateBtn) {
+                                    regenerateBtn.classList.add('d-none');  // Hide regenerate button initially
+                                }
                                 const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
                                 const modalContent = document.getElementById('ai-analysis-content');
                                 modalContent.innerHTML = `
-                            <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
-                                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <div class="mt-3">Analyzing all attempts... please wait.</div>
-                            </div>
-                        `;
+                                    <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div class="mt-3">Analyzing all attempts... please wait.</div>
+                                    </div>
+                                `;
                                 modal.show();
 
                                 fetch('/user', {
@@ -481,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         // Enable download button
                                         const downloadBtn = document.getElementById('btn-download-analysis');
                                         const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                        const regenerateBtn = document.getElementById("btn-regenerate-analysis");
                                         if (cancelBtn) {
                                             cancelBtn.classList.add('d-none');  // Hide cancel button after analysis
                                         }
@@ -502,6 +507,76 @@ document.addEventListener('DOMContentLoaded', () => {
                                             } else {
                                                 downloadBtn.classList.add('d-none');  // Hide if empty
                                             }
+                                        }
+                                        if (regenerateBtn) {
+                                            regenerateBtn.classList.remove('d-none'); // Show regenerate button
+                                            regenerateBtn.onclick = function () {
+
+                                                // Hide regenerate button and download button, show cancel button
+                                                if (downloadBtn) downloadBtn.classList.add('d-none');
+                                                if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                                                if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                                                const payload = {
+                                                    bulk_analysis: rowDataArray,
+                                                    force_refresh: true
+                                                };
+
+                                                modalContent.innerHTML = `
+                                                    <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <div class="mt-3">Regenerating analysis... please wait.</div>
+                                                    </div>
+                                                `;
+
+                                                fetch("/user", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify(payload)
+                                                })
+                                                    .then(res => res.json())
+                                                    .then(data => {
+                                                        // Show regenerate button and download button, hide cancel button
+                                                        if (downloadBtn) downloadBtn.classList.remove('d-none');
+                                                        if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                                        if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                                                        const regeneratedText = data.analysis || data.message || 'No analysis result.';
+                                                        const markdownHtml = marked.parse(regeneratedText);
+                                                        modalContent.innerHTML = `
+                                                            <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                                                ${markdownHtml}
+                                                            </div>
+                                                        `;
+
+                                                        // Update download button
+                                                        if (downloadBtn) {
+                                                            if (regeneratedText && regeneratedText.trim() !== '') {
+                                                                downloadBtn.classList.remove('d-none');
+                                                                downloadBtn.onclick = () => {
+                                                                    const blob = new Blob([regeneratedText], { type: 'text/plain' });
+                                                                    const url = URL.createObjectURL(blob);
+                                                                    const a = document.createElement('a');
+                                                                    const fileName = "[" + gameName + "] - AI_ANALYSIS_FOR_ALL_ATTEMPTS - USER " + userId + ".txt";
+                                                                    a.href = url;
+                                                                    a.download = fileName;
+                                                                    document.body.appendChild(a);
+                                                                    a.click();
+                                                                    document.body.removeChild(a);
+                                                                    URL.revokeObjectURL(url);
+                                                                };
+                                                            } else {
+                                                                downloadBtn.classList.add('d-none');
+                                                            }
+                                                        }
+                                                    })
+                                                    .catch(err => {
+                                                        console.error("Regenerate error:", err);
+                                                        modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
+                                                    });
+                                            };
                                         }
                                     })
                                     .catch(err => {
@@ -598,11 +673,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 btn.addEventListener('click', () => {
                                     const downloadBtn = document.getElementById('btn-download-analysis');
                                     const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                    const regenerateBtn = document.getElementById("btn-regenerate-analysis");
                                     if (cancelBtn) {
                                         cancelBtn.classList.remove('d-none');  // Show cancel button initially
                                     }
                                     if (downloadBtn) {
                                         downloadBtn.classList.add('d-none');  // Hide download button initially
+                                    }
+                                    if (regenerateBtn) {
+                                        regenerateBtn.classList.add('d-none');  // Hide regenerate button initially
                                     }
                                     const index = parseInt(btn.getAttribute('data-index'));
                                     const rowData = rowDataArray[index];
@@ -640,6 +719,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                             // Enable download button
                                             const downloadBtn = document.getElementById('btn-download-analysis');
                                             const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                            const regenerateBtn = document.getElementById("btn-regenerate-analysis");
+
                                             if (cancelBtn) {
                                                 cancelBtn.classList.add('d-none');  // Hide cancel button after analysis
                                             }
@@ -660,6 +741,75 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 } else {
                                                     downloadBtn.classList.add('d-none');  // Hide if empty
                                                 }
+                                            }
+                                            if (regenerateBtn) {
+                                                regenerateBtn.classList.remove('d-none'); // Show regenerate button
+                                                regenerateBtn.onclick = function () {
+
+                                                    // Hide regenerate button and download button, show cancel button
+                                                    if (downloadBtn) downloadBtn.classList.add('d-none');
+                                                    if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                                                    if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                                                    const payload = {
+                                                        row_analysis: rowData,
+                                                        force_refresh: true
+                                                    };
+
+                                                    modalContent.innerHTML = `
+                                                        <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                            <div class="mt-3">Regenerating analysis... please wait.</div>
+                                                        </div>
+                                                    `;
+
+                                                    fetch("/user", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify(payload)
+                                                    })
+                                                        .then(res => res.json())
+                                                        .then(data => {
+                                                            // Show regenerate button and download button, hide cancel button
+                                                            if (downloadBtn) downloadBtn.classList.remove('d-none');
+                                                            if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                                            if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                                                            const regeneratedText = data.analysis || data.message || 'No analysis result.';
+                                                            const markdownHtml = marked.parse(regeneratedText);
+                                                            modalContent.innerHTML = `
+                                                                <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                                                    ${markdownHtml}
+                                                                </div>
+                                                            `;
+
+                                                            // Update download button
+                                                            if (downloadBtn) {
+                                                                if (regeneratedText && regeneratedText.trim() !== '') {
+                                                                    downloadBtn.classList.remove('d-none');
+                                                                    downloadBtn.onclick = () => {
+                                                                        const blob = new Blob([regeneratedText], { type: 'text/plain' });
+                                                                        const url = URL.createObjectURL(blob);
+                                                                        const a = document.createElement('a');
+                                                                        a.href = url;
+                                                                        a.download = fileName;
+                                                                        document.body.appendChild(a);
+                                                                        a.click();
+                                                                        document.body.removeChild(a);
+                                                                        URL.revokeObjectURL(url);
+                                                                    };
+                                                                } else {
+                                                                    downloadBtn.classList.add('d-none');
+                                                                }
+                                                            }
+                                                        })
+                                                        .catch(err => {
+                                                            console.error("Regenerate error:", err);
+                                                            modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
+                                                        });
+                                                };
                                             }
                                         })
                                         .catch(err => {

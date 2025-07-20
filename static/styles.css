@@ -728,7 +728,8 @@ canvas {
 /* Modal Buttons */
 
 #btn-download-analysis,
-#btn-cancel-analysis {
+#btn-cancel-analysis,
+#btn-regenerate-analysis {
     position: relative;
     width: 140px;
     height: 40px;
@@ -747,22 +748,32 @@ canvas {
     width: 120px;
 }
 
+#btn-regenerate-analysis {
+    border: 1px solid #b38600;
+    background-color: #d4a017;
+    width: 150px;
+}
+
 #btn-download-analysis .button__icon,
 #btn-download-analysis .button__text,
 #btn-cancel-analysis .button__icon,
-#btn-cancel-analysis .button__text {
+#btn-cancel-analysis .button__text,
+#btn-regenerate-analysis .button__icon,
+#btn-regenerate-analysis .button__text {
     transition: all 0.3s;
 }
 
 #btn-download-analysis .button__text,
-#btn-cancel-analysis .button__text {
+#btn-cancel-analysis .button__text,
+#btn-regenerate-analysis .button__text {
     transform: translateX(10px);
     color: #fff;
     font-weight: 600;
 }
 
 #btn-download-analysis .button__icon,
-#btn-cancel-analysis .button__icon {
+#btn-cancel-analysis .button__icon,
+#btn-regenerate-analysis .button__icon {
     position: absolute;
     transform: translateX(95px);
     height: 100%;
@@ -778,8 +789,14 @@ canvas {
     transform: translateX(75px);
 }
 
+#btn-regenerate-analysis .button__icon {
+    background-color: #b38600;
+    transform: translateX(105px);
+}
+
 #btn-download-analysis .svg,
-#btn-cancel-analysis .svg {
+#btn-cancel-analysis .svg,
+#btn-regenerate-analysis .svg {
     width: 20px;
     fill: #fff;
 }
@@ -792,8 +809,13 @@ canvas {
     background: #cc0000;
 }
 
+#btn-regenerate-analysis:hover {
+    background: #b38600;
+}
+
 #btn-download-analysis:hover .button__text,
-#btn-cancel-analysis:hover .button__text {
+#btn-cancel-analysis:hover .button__text,
+#btn-regenerate-analysis:hover .button__text {
     color: transparent;
 }
 
@@ -807,6 +829,11 @@ canvas {
     transform: translateX(0);
 }
 
+#btn-regenerate-analysis:hover .button__icon {
+    width: 140px;
+    transform: translateX(0);
+}
+
 #btn-download-analysis:active .button__icon {
     background-color: #146c54;
 }
@@ -815,12 +842,20 @@ canvas {
     background-color: #b20000;
 }
 
+#btn-regenerate-analysis:active .button__icon {
+    background-color: #996600;
+}
+
 #btn-download-analysis:active {
     border: 1px solid #146c54;
 }
 
 #btn-cancel-analysis:active {
     border: 1px solid #b20000;
+}
+
+#btn-regenerate-analysis:active {
+    border: 1px solid #996600;
 }
 
 /* Settings Button on Home Page */
