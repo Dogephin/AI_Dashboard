@@ -144,7 +144,16 @@ def user():
 def mistakes():
     data = request.get_json()
     items = data.get("items", [])
-    mistake_categories = ua.categorize_mistakes(items, get_llm_client())
+
+    # Cache the mistake categories
+    key = generate_cache_key("mistakes", items)
+    mistake_categories = cache.get(key)
+
+    if not mistake_categories:
+        # If not cached, categorize mistakes using the LLM client
+        mistake_categories = ua.categorize_mistakes(items, get_llm_client())
+        cache.set(key, mistake_categories)
+
     return jsonify(
         {"message": "AI Categorization Completed.", "Categories": mistake_categories}
     )
