@@ -87,18 +87,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!btn) return;
 
         btn.addEventListener('click', () => {
+            const modalContent = document.getElementById('aiModalBody');
+            const cancelBtn = document.getElementById('btn-cancel-analysis');
+            const downloadBtn = document.getElementById('btn-download-analysis');
+
+            // Initial state: show cancel, hide download
+            if (cancelBtn) cancelBtn.classList.remove('d-none');
+            if (downloadBtn) downloadBtn.classList.add('d-none');
+
             showAiModal('<em>Generating summary…</em>');
 
             fetch(`/api/minigames/${gameId}/ai-summary`)
                 .then(r => r.json())
                 .then(res => {
-                    const html = res.analysis ? marked.parse(res.analysis)
-                        : 'No summary available.';
-                    showAiModal(`<div class="px-2 py-1">${html}</div>`);
+                    const result = res.analysis || 'No summary available.';
+                    const html = marked.parse(result);
+                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+
+                    // Enable download if result is non-empty
+                    if (downloadBtn && result.trim() !== '') {
+                        downloadBtn.classList.remove('d-none');
+                        downloadBtn.onclick = () => {
+                            const blob = new Blob([result], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        };
+                    }
+
+                    // Hide cancel after load
+                    if (cancelBtn) cancelBtn.classList.add('d-none');
                 })
                 .catch(err => {
                     console.error(err);
-                    showAiModal('<div class="text-danger">Failed to load summary.</div>');
+                    modalContent.innerHTML = '<div class="text-danger">Failed to load summary.</div>';
+                    if (cancelBtn) cancelBtn.classList.add('d-none');
                 });
         });
     }
