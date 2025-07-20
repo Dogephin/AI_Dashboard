@@ -90,10 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const modalContent = document.getElementById('aiModalBody');
             const cancelBtn = document.getElementById('btn-cancel-analysis');
             const downloadBtn = document.getElementById('btn-download-analysis');
+            const regenerateBtn = document.getElementById("btn-regenerate-analysis");
 
-            // Initial state: show cancel, hide download
+            // Initial state: show cancel, hide download and regenerate
             if (cancelBtn) cancelBtn.classList.remove('d-none');
             if (downloadBtn) downloadBtn.classList.add('d-none');
+            if (regenerateBtn) regenerateBtn.classList.add('d-none');
 
             showAiModal('<em>Generating summary…</em>');
 
@@ -122,6 +124,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Hide cancel after load
                     if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                    // Show regenerate button
+                    if (regenerateBtn) {
+                        regenerateBtn.classList.remove('d-none'); // Show regenerate button
+                        regenerateBtn.onclick = function () {
+                            // Hide regenerate button and download button, show cancel button
+                            if (downloadBtn) downloadBtn.classList.add('d-none');
+                            if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                            if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                            modalContent.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="mt-3">Regenerating analysis... please wait.</div>
+                                </div>
+                            `;
+
+                            fetch(`/api/minigames/${gameId}/ai-summary?force_refresh=true`)
+                                .then(r => r.json())
+                                .then(res => {
+                                    // Show regenerate button and download button, hide cancel button
+                                    if (downloadBtn) downloadBtn.classList.remove('d-none');
+                                    if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                    if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                                    const result = res.analysis || 'No summary available.';
+                                    const html = marked.parse(result);
+                                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+
+                                    // Update download button action
+                                    downloadBtn.onclick = () => {
+                                        const blob = new Blob([result], { type: 'text/plain' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    };
+                                })
+                                .catch(err => {
+                                    console.error("Regenerate error:", err);
+                                    modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
+                                });
+                        };
+                    }
                 })
                 .catch(err => {
                     console.error(err);

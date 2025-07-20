@@ -75,7 +75,10 @@ def api_minigame_ai_summary(game_id):
             "error_buckets": error_buckets,
         },
     )
-    analysis_text = cache.get(key)
+
+    # Check for force refresh (bypass cache)
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    analysis_text = None if force_refresh else cache.get(key)
 
     if not analysis_text:
         analysis_text = mg.ai_summary_for_minigame(
