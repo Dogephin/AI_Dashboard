@@ -16,3 +16,5 @@ venv/
 # Environment variables
 .env
 
+# llm_cache folder for caching LLM responses
+llm_cache/

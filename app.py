@@ -1,6 +1,7 @@
 from flask import Flask
 
 from utils.db import test_db_connection
+from utils.cache import init_cache
 from config import Config
 
 import logging
@@ -16,6 +17,11 @@ app = Flask(__name__)
 app.config["AI-TYPE"] = "API"  # Default to API model
 app.config["AI-MODEL"] = ""  # Default to no model
 
+app.config["CACHE_TYPE"] = "FileSystemCache"
+app.config["CACHE_DIR"] = "llm_cache"
+app.config["CACHE_DEFAULT_TIMEOUT"] = 3600  # 1 hour
+app.config["CACHE_THRESHOLD"] = 20  # Max number of items before old ones are removed
+
 app.config.from_object(Config)
 
 logging.basicConfig(
@@ -30,6 +36,7 @@ app.register_blueprint(overall_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(minigame_bp)
 
+init_cache(app)
 
 if __name__ == "__main__":
     test_db_connection()

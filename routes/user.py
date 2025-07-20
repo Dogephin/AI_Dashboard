@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify
 from analysis import user_analysis as ua
 from utils.context import get_llm_client
+from utils.cache import cache
+from utils.cache import generate_cache_key
 
 import json
 import datetime
@@ -87,9 +89,14 @@ def user():
             # print(row_data)
             # single_attempt_analysis_response = ua.response_cleanup(ua.analyze_single_attempt(row_data, llm_client)) # with cleanup
 
-            single_attempt_analysis_response = ua.analyze_single_attempt(
-                row_data, get_llm_client()
-            )
+            key = generate_cache_key("row_analysis", row_data)
+            single_attempt_analysis_response = cache.get(key)
+
+            if not single_attempt_analysis_response:
+                single_attempt_analysis_response = ua.analyze_single_attempt(
+                    row_data, get_llm_client()
+                )
+                cache.set(key, single_attempt_analysis_response)
 
             # ? For debugging, can remove this later
             # print("\nSingle attempt analysis response:\n")
@@ -105,13 +112,21 @@ def user():
         elif "bulk_analysis" in payload:
             all_attempts = payload["bulk_analysis"]
 
+            key = generate_cache_key("bulk_analysis", all_attempts)
+            bulk_analysis = cache.get(key)
+
             # ? For debugging, save the attempts to a file wth a timestamp
             # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             # all_attempts_filename = f'all_attempts_{timestamp}.json'
             # with open(all_attempts_filename, 'w') as f:
             #     json.dump(all_attempts, f, indent=4)
 
-            bulk_analysis = ua.analyze_multiple_attempts(all_attempts, get_llm_client())
+            if not bulk_analysis:
+                bulk_analysis = ua.analyze_multiple_attempts(
+                    all_attempts, get_llm_client()
+                )
+                cache.set(key, bulk_analysis)
+
             return jsonify(
                 {
                     "message": "AI Analysis for all attempts completed.",
