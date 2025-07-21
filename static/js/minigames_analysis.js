@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
 
                     // Enable download if result is non-empty
-                    if (downloadBtn && result.trim() !== '') {
+                    if (downloadBtn && result.trim() !== '' && result.trim() !== 'No gameplay data available for this mini-game.') {
                         downloadBtn.classList.remove('d-none');
                         downloadBtn.onclick = () => {
                             const blob = new Blob([result], { type: 'text/plain' });
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (cancelBtn) cancelBtn.classList.add('d-none');
 
                     // Show regenerate button
-                    if (regenerateBtn) {
+                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
                         regenerateBtn.classList.remove('d-none'); // Show regenerate button
                         regenerateBtn.onclick = function () {
                             // Hide regenerate button and download button, show cancel button
@@ -150,12 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             fetch(`/api/minigames/${gameId}/ai-summary?force_refresh=true`)
                                 .then(r => r.json())
                                 .then(res => {
+                                    const result = res.analysis || 'No summary available.';
+
                                     // Show regenerate button and download button, hide cancel button
-                                    if (downloadBtn) downloadBtn.classList.remove('d-none');
-                                    if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                    if (downloadBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
+                                        downloadBtn.classList.remove('d-none');
+                                    }
+                                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
+                                        regenerateBtn.classList.remove('d-none');
+                                    }
                                     if (cancelBtn) cancelBtn.classList.add('d-none');
 
-                                    const result = res.analysis || 'No summary available.';
+
                                     const html = marked.parse(result);
                                     modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
 
@@ -191,117 +197,117 @@ document.addEventListener('DOMContentLoaded', () => {
         Filter logic setup
     ──────────────────────────────────────────────────────────── */
     const sliderConfigs = {
-    total_attempts: [0, 500],
-    completion_rate: [0, 100],
-    average_score: [0, 500],
-    failed: [0, 300]
+        total_attempts: [0, 500],
+        completion_rate: [0, 100],
+        average_score: [0, 500],
+        failed: [0, 300]
     };
 
     const sliders = {};
 
     function setupFilterForm(games) {
-    const form = document.getElementById('filterForm');
-    if (!form) return;
+        const form = document.getElementById('filterForm');
+        if (!form) return;
 
-    // Prevent dropdown close on clicks inside
-    document.querySelector('#filterDropdown .dropdown-menu')
-        ?.addEventListener('click', e => e.stopPropagation());
+        // Prevent dropdown close on clicks inside
+        document.querySelector('#filterDropdown .dropdown-menu')
+            ?.addEventListener('click', e => e.stopPropagation());
 
-    Object.keys(sliderConfigs).forEach(key => {
-        const [min, max] = sliderConfigs[key];
-        const sliderInput = $(`#range_${key}`);
-        const minInput = document.getElementById(`input_min_${key}`);
-        const maxInput = document.getElementById(`input_max_${key}`);
+        Object.keys(sliderConfigs).forEach(key => {
+            const [min, max] = sliderConfigs[key];
+            const sliderInput = $(`#range_${key}`);
+            const minInput = document.getElementById(`input_min_${key}`);
+            const maxInput = document.getElementById(`input_max_${key}`);
 
-        sliders[key] = sliderInput.ionRangeSlider({
-        type: 'double',
-        min,
-        max,
-        from: min,
-        to: max,
-        grid: true,
-        keyboard: true,
-        disable: true,
-        prettify_enabled: false,
-        onChange: data => {
-            minInput.value = data.from;
-            maxInput.value = data.to;
-        }
-        }).data('ionRangeSlider');
+            sliders[key] = sliderInput.ionRangeSlider({
+                type: 'double',
+                min,
+                max,
+                from: min,
+                to: max,
+                grid: true,
+                keyboard: true,
+                disable: true,
+                prettify_enabled: false,
+                onChange: data => {
+                    minInput.value = data.from;
+                    maxInput.value = data.to;
+                }
+            }).data('ionRangeSlider');
 
-        // Update slider when user types into inputs
-        minInput.addEventListener('input', () => {
-        if (!sliders[key].options.disable) {
-            const newMin = parseInt(minInput.value) || min;
-            sliders[key].update({ from: Math.min(newMin, sliders[key].result.to) });
-        }
-        });
-
-        maxInput.addEventListener('input', () => {
-        if (!sliders[key].options.disable) {
-            const newMax = parseInt(maxInput.value) || max;
-            sliders[key].update({ to: Math.max(newMax, sliders[key].result.from) });
-        }
-        });
-    });
-
-    // Enable/disable sliders + inputs based on checkbox
-    form.querySelectorAll('input[type="checkbox"][name="filterTypes"]').forEach(cb => {
-        cb.addEventListener('change', () => {
-        const key = cb.value;
-        const minInput = document.getElementById(`input_min_${key}`);
-        const maxInput = document.getElementById(`input_max_${key}`);
-
-        if (cb.checked) {
-            sliders[key].update({ disable: false });
-            minInput.disabled = false;
-            maxInput.disabled = false;
-            minInput.value = sliders[key].result.from;
-            maxInput.value = sliders[key].result.to;
-        } else {
-            sliders[key].update({
-            disable: true,
-            from: sliderConfigs[key][0],
-            to: sliderConfigs[key][1]
+            // Update slider when user types into inputs
+            minInput.addEventListener('input', () => {
+                if (!sliders[key].options.disable) {
+                    const newMin = parseInt(minInput.value) || min;
+                    sliders[key].update({ from: Math.min(newMin, sliders[key].result.to) });
+                }
             });
-            minInput.disabled = true;
-            maxInput.disabled = true;
-            minInput.value = '';
-            maxInput.value = '';
-        }
-        });
-    });
 
-    // Filter logic on submit
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        const activeFilters = {};
-
-        form.querySelectorAll('input[type="checkbox"][name="filterTypes"]:checked').forEach(cb => {
-        const key = cb.value;
-        const slider = sliders[key];
-        activeFilters[key] = {
-            min: slider.result.from,
-            max: slider.result.to
-        };
+            maxInput.addEventListener('input', () => {
+                if (!sliders[key].options.disable) {
+                    const newMax = parseInt(maxInput.value) || max;
+                    sliders[key].update({ to: Math.max(newMax, sliders[key].result.from) });
+                }
+            });
         });
 
-        const filtered = games.filter(game => {
-        const stats = game.stats || {};
-        for (const key in activeFilters) {
-            const { min, max } = activeFilters[key];
-            const val = stats[key];
-            if (val === undefined || val < min || val > max) return false;
-        }
-        return true;
+        // Enable/disable sliders + inputs based on checkbox
+        form.querySelectorAll('input[type="checkbox"][name="filterTypes"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const key = cb.value;
+                const minInput = document.getElementById(`input_min_${key}`);
+                const maxInput = document.getElementById(`input_max_${key}`);
+
+                if (cb.checked) {
+                    sliders[key].update({ disable: false });
+                    minInput.disabled = false;
+                    maxInput.disabled = false;
+                    minInput.value = sliders[key].result.from;
+                    maxInput.value = sliders[key].result.to;
+                } else {
+                    sliders[key].update({
+                        disable: true,
+                        from: sliderConfigs[key][0],
+                        to: sliderConfigs[key][1]
+                    });
+                    minInput.disabled = true;
+                    maxInput.disabled = true;
+                    minInput.value = '';
+                    maxInput.value = '';
+                }
+            });
         });
 
-        grid.innerHTML = '';
-        filtered.forEach(g => grid.appendChild(createCard(g)));
+        // Filter logic on submit
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const activeFilters = {};
 
-        const dropdown = bootstrap.Dropdown.getOrCreateInstance(document.getElementById('filterButton'));
-        dropdown.hide();
-    });
+            form.querySelectorAll('input[type="checkbox"][name="filterTypes"]:checked').forEach(cb => {
+                const key = cb.value;
+                const slider = sliders[key];
+                activeFilters[key] = {
+                    min: slider.result.from,
+                    max: slider.result.to
+                };
+            });
+
+            const filtered = games.filter(game => {
+                const stats = game.stats || {};
+                for (const key in activeFilters) {
+                    const { min, max } = activeFilters[key];
+                    const val = stats[key];
+                    if (val === undefined || val < min || val > max) return false;
+                }
+                return true;
+            });
+
+            grid.innerHTML = '';
+            filtered.forEach(g => grid.appendChild(createCard(g)));
+
+            const dropdown = bootstrap.Dropdown.getOrCreateInstance(document.getElementById('filterButton'));
+            dropdown.hide();
+        });
     }
 
 });
