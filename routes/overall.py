@@ -17,7 +17,10 @@ def api_avg_scores_analysis():
         "avg_scores_analysis",
         {"avg_scores": avg_scores, "max_score_by_minigame": max_score_by_minigame},
     )
-    avg_scores_analysis_response = cache.get(key)
+
+    # Check for force refresh (bypass cache)
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    avg_scores_analysis_response = None if force_refresh else cache.get(key)
 
     if not avg_scores_analysis_response:
         avg_scores_analysis_response = oa.avg_scores_for_practice_assessment_analysis(
@@ -36,7 +39,10 @@ def api_error_frequency_analysis():
 
     # Cache the error frequency analysis
     key = generate_cache_key("error_frequency_analysis", {"results": results})
-    error_frequency_analysis_response = cache.get(key)
+
+    # Check for force refresh (bypass cache)
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    error_frequency_analysis_response = None if force_refresh else cache.get(key)
 
     if not error_frequency_analysis_response:
         error_frequency_analysis_response = oa.error_frequency_analysis(
@@ -57,7 +63,10 @@ def api_performance_duration_analysis():
     key = generate_cache_key(
         "performance_duration_analysis", {"duration_data": duration_data}
     )
-    performance_duration_analysis_response = cache.get(key)
+
+    # Check for force refresh (bypass cache)
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    performance_duration_analysis_response = None if force_refresh else cache.get(key)
 
     if not performance_duration_analysis_response:
         performance_duration_analysis_response = oa.performance_vs_duration(
@@ -76,7 +85,10 @@ def api_overall_user_analysis():
 
     # Cache the overall user analysis
     key = generate_cache_key("overall_user_analysis", {"results": results2})
-    overall_user_analysis_response = cache.get(key)
+
+    # Check for force refresh (bypass cache)
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    overall_user_analysis_response = None if force_refresh else cache.get(key)
 
     if not overall_user_analysis_response:
         overall_user_analysis_response = oa.overall_user_analysis(

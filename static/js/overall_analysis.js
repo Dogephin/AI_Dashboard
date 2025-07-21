@@ -1,18 +1,31 @@
+let aiModalInstance = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.analyze-btn').forEach(button => {
         button.addEventListener('click', () => generateAnalysis(button));
     });
 });
 
-function generateAnalysis(button) {
+document.getElementById('aiAnalysisModal').addEventListener('hidden.bs.modal', () => {
+    aiModalInstance = null;
+
+    // Force-remove any remaining modal backdrop and cleanup
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.paddingRight = '';
+});
+
+function generateAnalysis(button, forceRefresh = false) {
     const type = button.getAttribute('data-type');
     const modalBody = document.getElementById('ai-analysis-content');
     const cancelBtn = document.getElementById('btn-cancel-analysis');
     const downloadBtn = document.getElementById('btn-download-analysis');
+    const regenerateBtn = document.getElementById("btn-regenerate-analysis");
 
-    // Initial state: show cancel, hide download
+    // Initial state: show cancel, hide download and regenerate
     if (cancelBtn) cancelBtn.classList.remove('d-none');
     if (downloadBtn) downloadBtn.classList.add('d-none');
+    if (regenerateBtn) regenerateBtn.classList.add('d-none');
 
     // Set modal loading UI
     modalBody.innerHTML = `
@@ -25,11 +38,22 @@ function generateAnalysis(button) {
     `;
 
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
-    modal.show();
+    if (!aiModalInstance) {
+        aiModalInstance = new bootstrap.Modal(document.getElementById('aiAnalysisModal'), {
+            backdrop: true
+        });
+    }
+
+    aiModalInstance.show();
+
+    // Construct URL with force_refresh param if needed
+    let url = `/api/analysis/${type}`;
+    if (forceRefresh) {
+        url += '?force_refresh=true';
+    }
 
     // Fetch analysis
-    fetch(`/api/analysis/${type}`)
+    fetch(url)
         .then(res => res.json())
         .then(data => {
             cancelBtn.classList.add('d-none');  // hide cancel when complete
@@ -68,6 +92,28 @@ function generateAnalysis(button) {
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                };
+            }
+
+            // Show regenerate button
+            if (regenerateBtn) {
+                regenerateBtn.classList.remove('d-none'); // Show regenerate button
+                regenerateBtn.onclick = function () {
+                    // Hide regenerate button and download button, show cancel button
+                    if (downloadBtn) downloadBtn.classList.add('d-none');
+                    if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                    if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                    modalBody.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-3">Regenerating analysis... please wait.</div>
+                        </div>
+                    `;
+
+                    generateAnalysis(button, true); // Call the same function to regenerate with forceRefresh flag
                 };
             }
         })
