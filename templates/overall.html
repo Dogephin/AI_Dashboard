@@ -177,11 +177,10 @@
 
     <!-- Data passed from Flask -->
     <script>
-        const chartDataFromFlask = {{ chart_data | tojson | safe }};
-        const scatterChartDataFromFlask = {{ scatter_chart_data | tojson }};
-        const avgScoreChartDataFromFlask = {{ avg_score_chart_data | tojson }};
+        const chartDataFromFlask = JSON.parse('{{ chart_data | tojson | safe }}');
+        const scatterChartDataFromFlask = JSON.parse('{{ scatter_chart_data | tojson | safe }}');
+        const avgScoreChartDataFromFlask = JSON.parse('{{ avg_score_chart_data | tojson | safe }}');
     </script>
-
     <script src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
     <script src="{{ url_for('static', filename='js/overall_analysis.js') }}"></script>
 </body>

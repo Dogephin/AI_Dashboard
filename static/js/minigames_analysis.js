@@ -1,42 +1,53 @@
-/* static/js/minigames_analysis.js
-    ---------------------------------------------------------------
-    Handles the interactive mini-game dashboard (minigames.html).
-*/
-
 document.addEventListener('DOMContentLoaded', () => {
-    const grid = document.getElementById('gamesGrid');   // <section id="gamesGrid">
+    const grid = document.getElementById('gamesGrid');
 
-    /* ────────────────────────────────────────────────────────────
-        1.  Load the list of mini-games and build cards
-    ──────────────────────────────────────────────────────────── */
     fetch('/api/minigames')
         .then(r => r.json())
         .then(games => {
-            grid.innerHTML = '';        // clear loading text
-            games.forEach(g => grid.appendChild(createCard(g)));
+            // Step 1: Fetch stats for each game
+            return Promise.all(games.map(game =>
+                fetch(`/api/minigames/${game.Level_ID}/stats`)
+                    .then(r => r.json())
+                    .then(stats => {
+                        game.stats = stats.summary;
+                        return game;
+                    })
+                    .catch(err => {
+                        console.error(`Stats failed for Game ID ${game.Level_ID}`, err);
+                        return game; // still include even if stats fail
+                    })
+            ));
+        })
+        .then(gamesWithStats => {
+            grid.innerHTML = ''; // Clear loading
+
+            // Store globally if you want to re-filter later
+            window._allGames = gamesWithStats;
+
+            // Initial render
+            gamesWithStats.forEach(game => grid.appendChild(createCard(game)));
+
+            // Hook up filtering logic
+            setupFilterForm(gamesWithStats);
         })
         .catch(err => {
             console.error('Failed to load mini-games:', err);
             grid.innerHTML = '<p class="text-danger">Could not load mini-games.</p>';
         });
 
-    /* helper to build one card */
     function createCard(game) {
         const card = document.createElement('div');
-        card.className = 'game-card';      // styled in minigames.html <style>
+        card.className = 'game-card';
         card.innerHTML = `
             <h2 class="text-lg font-semibold mb-1" style="color: #000;">${game.Name}</h2>
             <p class="text-sm text-gray-600 mb-2">Game ID ${game.Game_ID} | Level ${game.Level_ID}</p>
-            <button class="btn btn-primary btn-sm" data-game-id="${game.Level_ID}">
-                View Stats
-            </button>
+            <button class="btn btn-primary btn-sm" data-game-id="${game.Level_ID}">View Stats</button>
             <div class="details mt-3" id="details-${game.Level_ID}" style="display:none;"></div>
             <button class="btn btn-outline-secondary btn-sm ai-summary-btn" data-game-id="${game.Level_ID}">
                 View AI Summary
             </button>
         `;
 
-        /* click handler */
         card.querySelector('button').addEventListener('click', () =>
             toggleDetails(game.Level_ID)
         );
@@ -44,11 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    /* ────────────────────────────────────────────────────────────
-        2.  Expand / collapse details for one game
-    ──────────────────────────────────────────────────────────── */
     function toggleDetails(gameId) {
-        console.log('Fetching stats for game ID:', gameId);
         fetch(`/api/minigames/${gameId}/stats`)
             .then(r => r.json())
             .then(data => {
@@ -79,9 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    /* ────────────────────────────────────────────────────────────
-        3.  AI summary generation
-    ──────────────────────────────────────────────────────────── */
     function attachAiButton(gameId) {
         const btn = document.querySelector(`button.ai-summary-btn[data-game-id="${gameId}"]`);
         if (!btn) return;
@@ -181,6 +185,123 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (cancelBtn) cancelBtn.classList.add('d-none');
                 });
         });
+    }
+
+    /* ────────────────────────────────────────────────────────────
+        Filter logic setup
+    ──────────────────────────────────────────────────────────── */
+    const sliderConfigs = {
+    total_attempts: [0, 500],
+    completion_rate: [0, 100],
+    average_score: [0, 500],
+    failed: [0, 300]
+    };
+
+    const sliders = {};
+
+    function setupFilterForm(games) {
+    const form = document.getElementById('filterForm');
+    if (!form) return;
+
+    // Prevent dropdown close on clicks inside
+    document.querySelector('#filterDropdown .dropdown-menu')
+        ?.addEventListener('click', e => e.stopPropagation());
+
+    Object.keys(sliderConfigs).forEach(key => {
+        const [min, max] = sliderConfigs[key];
+        const sliderInput = $(`#range_${key}`);
+        const minInput = document.getElementById(`input_min_${key}`);
+        const maxInput = document.getElementById(`input_max_${key}`);
+
+        sliders[key] = sliderInput.ionRangeSlider({
+        type: 'double',
+        min,
+        max,
+        from: min,
+        to: max,
+        grid: true,
+        keyboard: true,
+        disable: true,
+        prettify_enabled: false,
+        onChange: data => {
+            minInput.value = data.from;
+            maxInput.value = data.to;
+        }
+        }).data('ionRangeSlider');
+
+        // Update slider when user types into inputs
+        minInput.addEventListener('input', () => {
+        if (!sliders[key].options.disable) {
+            const newMin = parseInt(minInput.value) || min;
+            sliders[key].update({ from: Math.min(newMin, sliders[key].result.to) });
+        }
+        });
+
+        maxInput.addEventListener('input', () => {
+        if (!sliders[key].options.disable) {
+            const newMax = parseInt(maxInput.value) || max;
+            sliders[key].update({ to: Math.max(newMax, sliders[key].result.from) });
+        }
+        });
+    });
+
+    // Enable/disable sliders + inputs based on checkbox
+    form.querySelectorAll('input[type="checkbox"][name="filterTypes"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+        const key = cb.value;
+        const minInput = document.getElementById(`input_min_${key}`);
+        const maxInput = document.getElementById(`input_max_${key}`);
+
+        if (cb.checked) {
+            sliders[key].update({ disable: false });
+            minInput.disabled = false;
+            maxInput.disabled = false;
+            minInput.value = sliders[key].result.from;
+            maxInput.value = sliders[key].result.to;
+        } else {
+            sliders[key].update({
+            disable: true,
+            from: sliderConfigs[key][0],
+            to: sliderConfigs[key][1]
+            });
+            minInput.disabled = true;
+            maxInput.disabled = true;
+            minInput.value = '';
+            maxInput.value = '';
+        }
+        });
+    });
+
+    // Filter logic on submit
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        const activeFilters = {};
+
+        form.querySelectorAll('input[type="checkbox"][name="filterTypes"]:checked').forEach(cb => {
+        const key = cb.value;
+        const slider = sliders[key];
+        activeFilters[key] = {
+            min: slider.result.from,
+            max: slider.result.to
+        };
+        });
+
+        const filtered = games.filter(game => {
+        const stats = game.stats || {};
+        for (const key in activeFilters) {
+            const { min, max } = activeFilters[key];
+            const val = stats[key];
+            if (val === undefined || val < min || val > max) return false;
+        }
+        return true;
+        });
+
+        grid.innerHTML = '';
+        filtered.forEach(g => grid.appendChild(createCard(g)));
+
+        const dropdown = bootstrap.Dropdown.getOrCreateInstance(document.getElementById('filterButton'));
+        dropdown.hide();
+    });
     }
 
 });
