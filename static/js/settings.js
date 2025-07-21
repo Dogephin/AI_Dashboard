@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const modelSelectContainer = document.getElementById("model-select")?.closest(".form-group");
     const noModelsMessage = document.getElementById("no-models-message");
     const saveButton = document.getElementById("save-button");
+    const clearCacheButton = document.getElementById("clear-cache-button");
+    const cacheStatusMessage = document.getElementById("cache-status-message");
 
     const hasNoModels = !!noModelsMessage;
 
@@ -67,6 +69,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 statusMessage.classList.add("text-danger");
                 statusMessage.style.display = "block";
                 console.error("Settings save error:", error);
+            });
+    });
+
+    clearCacheButton.addEventListener("click", function () {
+        fetch("/settings/clear-cache", {
+            method: "POST"
+        })
+            .then(response => response.json())
+            .then(result => {
+                cacheStatusMessage.textContent = result.message;
+                cacheStatusMessage.classList.remove("text-danger");
+                cacheStatusMessage.classList.add("text-success");
+                cacheStatusMessage.style.display = "block";
+            })
+            .catch(error => {
+                cacheStatusMessage.textContent = "Error clearing cache.";
+                cacheStatusMessage.classList.remove("text-success");
+                cacheStatusMessage.classList.add("text-danger");
+                cacheStatusMessage.style.display = "block";
+                console.error("Cache clear error:", error);
             });
     });
 });

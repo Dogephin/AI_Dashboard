@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, g, current_app
+from flask import Blueprint, render_template, request, jsonify, g, current_app, abort
 import utils.llm as llm
+import os
+import shutil
 
 settings_bp = Blueprint("settings", __name__, template_folder="templates")
 
@@ -46,3 +48,23 @@ def settings():
         models=llm.get_models(),
         selected_model=current_app.config.get("AI-MODEL"),
     )
+
+
+@settings_bp.route("/settings/clear-cache", methods=["POST"])
+def clear_cache():
+    cache_dir = current_app.config.get("CACHE_DIR")
+
+    if not cache_dir or not os.path.exists(cache_dir):
+        return jsonify({"message": "⚠️ Cache directory not found."}), 400
+
+    try:
+        for filename in os.listdir(cache_dir):
+            file_path = os.path.join(cache_dir, filename)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        return jsonify({"message": "✅ Cache cleared successfully."})
+    except Exception as e:
+        current_app.logger.error(f"Error clearing cache: {e}")
+        return jsonify({"message": "❌ Failed to clear cache."}), 500
