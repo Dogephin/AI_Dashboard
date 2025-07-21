@@ -2,28 +2,18 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include 'common/head.html' %}
     <title>Game Analysis Dashboard – Minigames</title>
+    <script defer src="{{ url_for('static', filename='js/minigames_analysis.js') }}"></script>
 
     <!-- Ion.RangeSlider CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ion-rangeslider/css/ion.rangeSlider.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ion-rangeslider/css/ion.rangeSlider.min.css" />
 
     <!-- jQuery (required for Ion.RangeSlider) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- Ion.RangeSlider JS -->
-    <script src="https://cdn.jsdelivr.net/npm/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
-    <!-- your global stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-
-    <!-- Chart.js is still available if you need it later -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
-        crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
 
     <!-- --- Tiny page-specific styles --- -->
     <style>
@@ -73,24 +63,13 @@
 </head>
 
 <body>
-    <header>
-        <div class="header-content">
-            <button id="back-button" onclick="window.location.href='/'">
-                <!-- (same SVG arrow as before) -->
-                <svg height="16" width="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                    <path
-                        d="M874.69 495.52c0 11.3-9.17 20.47-20.47 20.47H249.44l188.08 188.08c7.99 7.99 7.99 20.95 0 28.94-4 3.99-9.24 5.99-14.47 5.99-5.24 0-10.48-2-14.48-5.99L185.51 509.97c-3.84-3.84-5.99-9.05-5.99-14.47 0-5.43 2.16-10.63 5.99-14.47l223.02-223.03c7.99-7.99 20.96-7.99 28.95 0 7.99 8 7.99 20.96 0 28.95L249.43 475.06h604.79c11.3 0 20.47 9.16 20.47 20.46z" />
-                </svg>
-                <span>Back</span>
-            </button>
-            <div class="header-title">Game Analysis Dashboard – Minigames</div>
-        </div>
-    </header>
+    {% include 'common/header.html' %}
 
     <div class="container my-3 text-end dropdown" id="filterDropdown">
-        <button class="btn btn-primary dropdown-toggle" id="filterButton" data-bs-toggle="dropdown" aria-expanded="false">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                class="bi bi-funnel-fill" viewBox="0 0 16 16">
+        <button class="btn btn-primary dropdown-toggle" id="filterButton" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel-fill"
+                viewBox="0 0 16 16">
                 <path
                     d="M1.5 1.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 .4.8L10 8.293V14.5a.5.5 0 0 1-.8.4l-2-1.5a.5.5 0 0 1-.2-.4V8.293L1.1 1.8a.5.5 0 0 1 .4-.8z" />
             </svg>
@@ -103,54 +82,66 @@
 
                 <!-- Total Attempts -->
                 <div class="mb-3">
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" name="filterTypes" value="total_attempts" id="filterAttempts">
-                    <label class="form-check-label" for="filterAttempts">Total Attempts</label>
-                </div>
-                <input type="text" id="range_total_attempts" name="range_total_attempts" disabled>
-                <div class="d-flex justify-content-between mt-1">
-                    <input type="number" id="input_min_total_attempts" class="form-control form-control-sm w-45" placeholder="Min" disabled>
-                    <input type="number" id="input_max_total_attempts" class="form-control form-control-sm w-45" placeholder="Max" disabled>
-                </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="filterTypes" value="total_attempts"
+                            id="filterAttempts">
+                        <label class="form-check-label" for="filterAttempts">Total Attempts</label>
+                    </div>
+                    <input type="text" id="range_total_attempts" name="range_total_attempts" disabled>
+                    <div class="d-flex justify-content-between mt-1">
+                        <input type="number" id="input_min_total_attempts" class="form-control form-control-sm w-45"
+                            placeholder="Min" disabled>
+                        <input type="number" id="input_max_total_attempts" class="form-control form-control-sm w-45"
+                            placeholder="Max" disabled>
+                    </div>
                 </div>
 
                 <!-- Completion Rate -->
                 <div class="mb-3">
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" name="filterTypes" value="completion_rate" id="filterCompletion">
-                    <label class="form-check-label" for="filterCompletion">Completion Rate</label>
-                </div>
-                <input type="text" id="range_completion_rate" name="range_completion_rate" disabled>
-                <div class="d-flex justify-content-between mt-1">
-                    <input type="number" id="input_min_completion_rate" class="form-control form-control-sm w-45" placeholder="Min" disabled>
-                    <input type="number" id="input_max_completion_rate" class="form-control form-control-sm w-45" placeholder="Max" disabled>
-                </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="filterTypes" value="completion_rate"
+                            id="filterCompletion">
+                        <label class="form-check-label" for="filterCompletion">Completion Rate</label>
+                    </div>
+                    <input type="text" id="range_completion_rate" name="range_completion_rate" disabled>
+                    <div class="d-flex justify-content-between mt-1">
+                        <input type="number" id="input_min_completion_rate" class="form-control form-control-sm w-45"
+                            placeholder="Min" disabled>
+                        <input type="number" id="input_max_completion_rate" class="form-control form-control-sm w-45"
+                            placeholder="Max" disabled>
+                    </div>
                 </div>
 
                 <!-- Average Score -->
                 <div class="mb-3">
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" name="filterTypes" value="average_score" id="filterAvgScore">
-                    <label class="form-check-label" for="filterAvgScore">Average Score</label>
-                </div>
-                <input type="text" id="range_average_score" name="range_average_score" disabled>
-                <div class="d-flex justify-content-between mt-1">
-                    <input type="number" id="input_min_average_score" class="form-control form-control-sm w-45" placeholder="Min" disabled>
-                    <input type="number" id="input_max_average_score" class="form-control form-control-sm w-45" placeholder="Max" disabled>
-                </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="filterTypes" value="average_score"
+                            id="filterAvgScore">
+                        <label class="form-check-label" for="filterAvgScore">Average Score</label>
+                    </div>
+                    <input type="text" id="range_average_score" name="range_average_score" disabled>
+                    <div class="d-flex justify-content-between mt-1">
+                        <input type="number" id="input_min_average_score" class="form-control form-control-sm w-45"
+                            placeholder="Min" disabled>
+                        <input type="number" id="input_max_average_score" class="form-control form-control-sm w-45"
+                            placeholder="Max" disabled>
+                    </div>
                 </div>
 
                 <!-- Failed -->
                 <div class="mb-3">
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" name="filterTypes" value="failed" id="filterFailed">
-                    <label class="form-check-label" for="filterFailed">Failed</label>
-                </div>
-                <input type="text" id="range_failed" name="range_failed" disabled>
-                <div class="d-flex justify-content-between mt-1">
-                    <input type="number" id="input_min_failed" class="form-control form-control-sm w-45" placeholder="Min" disabled>
-                    <input type="number" id="input_max_failed" class="form-control form-control-sm w-45" placeholder="Max" disabled>
-                </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="filterTypes" value="failed"
+                            id="filterFailed">
+                        <label class="form-check-label" for="filterFailed">Failed</label>
+                    </div>
+                    <input type="text" id="range_failed" name="range_failed" disabled>
+                    <div class="d-flex justify-content-between mt-1">
+                        <input type="number" id="input_min_failed" class="form-control form-control-sm w-45"
+                            placeholder="Min" disabled>
+                        <input type="number" id="input_max_failed" class="form-control form-control-sm w-45"
+                            placeholder="Max" disabled>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Apply</button>
@@ -163,7 +154,7 @@
     <section id="gamesGrid" class="grid gap-4   /* space between cards           */
                 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  /* 2-4 cols */
                 auto-rows-auto"></section>
-    
+
     <!-- Modal for Game Stats -->
     <div class="modal fade" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -230,10 +221,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ENjdO4Dr2bkBIFxQpeoK3zY9X9+OrQ6O6rj3Gd+5L3kzW2TrKcHzKHduvU+mjJ8s"
-        crossorigin="anonymous"></script>
-
     <!-- Helper function to show stats modal -->
     <script>
         let statsModalInstance = null;
@@ -283,12 +270,7 @@
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
         });
-
-
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="{{ url_for('static', filename='js/minigames_analysis.js') }}"></script>
 </body>
 
 </html>

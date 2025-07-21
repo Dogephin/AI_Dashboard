@@ -174,6 +174,7 @@ def overall():
 
     return render_template(
         "overall.html",
+        header_title="Game Analysis Dashboard - Overall",
         chart_data=chart_data,
         analysis=analysis_text,
         insights=insights,

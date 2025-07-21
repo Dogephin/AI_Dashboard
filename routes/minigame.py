@@ -8,7 +8,9 @@ minigame_bp = Blueprint("minigame", __name__, template_folder="templates")
 
 @minigame_bp.route("/minigames")
 def minigames():
-    return render_template("minigames.html")
+    return render_template(
+        "minigames.html", header_title="Game Analysis Dashboard - Minigames"
+    )
 
 
 @minigame_bp.route("/api/minigames")

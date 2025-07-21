@@ -41,6 +41,7 @@ def settings():
 
     return render_template(
         "settings.html",
+        header_title="Game Analysis Dashboard - Settings",
         ai_type=current_app.config.get("AI-TYPE"),
         models=llm.get_models(),
         selected_model=current_app.config.get("AI-MODEL"),

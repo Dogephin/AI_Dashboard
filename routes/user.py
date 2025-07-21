@@ -146,7 +146,12 @@ def user():
         else:
             return jsonify({"status": "error", "message": "Invalid POST payload."})
 
-    return render_template("user.html", users=users, games=games)
+    return render_template(
+        "user.html",
+        header_title="Game Analysis Dashboard - User",
+        users=users,
+        games=games,
+    )
 
 
 @user_bp.route("/generate-ai-prompt", methods=["POST"])
