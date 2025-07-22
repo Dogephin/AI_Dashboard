@@ -8,75 +8,87 @@
 </head>
 
 <body>
-    {% include 'common/header.html' %}
-    <div class="selection-container">
-        <div class="selection-card">
-            <form id="settings-form" method="POST" action="/settings">
-                <div class="form-group">
-                    <label class="form-label" id="select-ai-type-label">Select AI Type:</label>
-                    <div class="btn-container">
-                        <!-- Local Icon -->
-                        <span class="emoji-label" aria-hidden="true">💻</span>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        {% include 'common/sidebar.html' %}
+        <!-- Main Content -->
+        <div class="main">
+            {% include 'common/header.html' %}
+            <div class="selection-container">
+                <div class="selection-card">
+                    <form id="settings-form" method="POST" action="/settings">
+                        <div class="form-group">
+                            <label class="form-label" id="select-ai-type-label">Select AI Type:</label>
+                            <div class="btn-container">
+                                <!-- Local Icon -->
+                                <span class="emoji-label" aria-hidden="true">💻</span>
 
-                        <label class="switch btn-color-mode-switch">
-                            <input type="checkbox" id="color_mode" name="ai_type" value="API" {% if ai_type=="API"
-                                %}checked{% endif %}>
+                                <label class="switch btn-color-mode-switch">
+                                    <input type="checkbox" id="color_mode" name="ai_type" value="API" {% if
+                                        ai_type=="API" %}checked{% endif %}>
 
-                            <label class="btn-color-mode-switch-inner" data-off="LOCAL" data-on="API"
-                                for="color_mode"></label>
-                        </label>
+                                    <label class="btn-color-mode-switch-inner" data-off="LOCAL" data-on="API"
+                                        for="color_mode"></label>
+                                </label>
 
-                        <!-- API Icon -->
-                        <span class="emoji-label" aria-hidden="true">🌐</span>
-                    </div>
+                                <!-- API Icon -->
+                                <span class="emoji-label" aria-hidden="true">🌐</span>
+                            </div>
+                        </div>
+
+                        {% if models|length > 0 %}
+                        <div class="form-group">
+                            <label for="model-select" class="form-label" id="select-ai-model-label">Select
+                                Model:</label>
+                            <select id="model-select" class="form-select" name="ai_model">
+                                {% for model in models %}
+                                <option value="{{ model }}" {% if model==selected_model %}selected{% endif %}>{{ model
+                                    }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% else %}
+                        <div class="form-group" id="no-models-message">
+                            <p class="text-danger">⚠️ No DeepSeek models found on your computer.</p>
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary w-100" id="save-button">Save</button>
+                        <p id="status-message" class="mt-2 text-success" style="display: none;"></p>
+                    </form>
+                    <button type="button" class="clear-cache-button mt-3" id="clear-cache-button">
+                        <span class="button__text">Clear Cache</span>
+                        <span class="button__icon"><svg xmlns="http://www.w3.org/2000/svg" width="512"
+                                viewBox="0 0 512 512" height="512" class="svg">
+                                <title></title>
+                                <path
+                                    style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px"
+                                    d="M112,112l20,320c.95,18.49,14.4,32,32,32H348c17.67,0,30.87-13.51,32-32l20-320">
+                                </path>
+                                <line y2="112" y1="112" x2="432" x1="80"
+                                    style="stroke:#323232;stroke-linecap:round;stroke-miterlimit:10;stroke-width:32px">
+                                </line>
+                                <path
+                                    style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px"
+                                    d="M192,112V72h0a23.93,23.93,0,0,1,24-24h80a23.93,23.93,0,0,1,24,24h0v40"></path>
+                                <line y2="400" y1="176" x2="256" x1="256"
+                                    style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
+                                </line>
+                                <line y2="400" y1="176" x2="192" x1="184"
+                                    style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
+                                </line>
+                                <line y2="400" y1="176" x2="320" x1="328"
+                                    style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
+                                </line>
+                            </svg></span>
+                    </button>
+                    <p id="cache-status-message" class="mt-2 text-success" style="display: none;"></p>
                 </div>
-
-                {% if models|length > 0 %}
-                <div class="form-group">
-                    <label for="model-select" class="form-label" id="select-ai-model-label">Select Model:</label>
-                    <select id="model-select" class="form-select" name="ai_model">
-                        {% for model in models %}
-                        <option value="{{ model }}" {% if model==selected_model %}selected{% endif %}>{{ model }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% else %}
-                <div class="form-group" id="no-models-message">
-                    <p class="text-danger">⚠️ No DeepSeek models found on your computer.</p>
-                </div>
-                {% endif %}
-
-                <button type="submit" class="btn btn-primary w-100" id="save-button">Save</button>
-                <p id="status-message" class="mt-2 text-success" style="display: none;"></p>
-            </form>
-            <button type="button" class="clear-cache-button mt-3" id="clear-cache-button">
-                <span class="button__text">Clear Cache</span>
-                <span class="button__icon"><svg xmlns="http://www.w3.org/2000/svg" width="512" viewBox="0 0 512 512"
-                        height="512" class="svg">
-                        <title></title>
-                        <path
-                            style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px"
-                            d="M112,112l20,320c.95,18.49,14.4,32,32,32H348c17.67,0,30.87-13.51,32-32l20-320"></path>
-                        <line y2="112" y1="112" x2="432" x1="80"
-                            style="stroke:#323232;stroke-linecap:round;stroke-miterlimit:10;stroke-width:32px"></line>
-                        <path
-                            style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px"
-                            d="M192,112V72h0a23.93,23.93,0,0,1,24-24h80a23.93,23.93,0,0,1,24,24h0v40"></path>
-                        <line y2="400" y1="176" x2="256" x1="256"
-                            style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
-                        </line>
-                        <line y2="400" y1="176" x2="192" x1="184"
-                            style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
-                        </line>
-                        <line y2="400" y1="176" x2="320" x1="328"
-                            style="fill:none;stroke:#323232;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px">
-                        </line>
-                    </svg></span>
-            </button>
-            <p id="cache-status-message" class="mt-2 text-success" style="display: none;"></p>
+            </div>
         </div>
     </div>
+
 </body>
 
 </html>

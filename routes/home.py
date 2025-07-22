@@ -5,4 +5,4 @@ home_bp = Blueprint("home", __name__, template_folder="templates")
 
 @home_bp.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html", header_title="Game Analysis Dashboard")

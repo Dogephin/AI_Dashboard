@@ -8,38 +8,46 @@
 </head>
 
 <body>
-    {% include 'common/header.html' %}
-    <div class="selection-container">
-        <div class="selection-card">
-            <form id="user-form">
-                {% if users %}
-                <div class="form-group">
-                    <label for="user-select" class="form-label">Select User:</label>
-                    <select id="user-select" class="form-select">
-                        {% for user in users %}
-                        <option value="{{ user.user_id }}">{{ user.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
+    <div class="wrapper">
+        <!-- Sidebar -->
+        {% include 'common/sidebar.html' %}
+        <!-- Main Content -->
+        <div class="main">
+            {% include 'common/header.html' %}
 
-                {% if games %}
-                <div class="form-group">
-                    <label for="game-select" class="form-label">Select Game:</label>
-                    <select id="game-select" class="form-select">
-                        {% for game in games %}
-                        <option value="{{ game.Level_ID }}">{{ game.Name }}</option>
-                        {% endfor %}
-                        <option value="overall_assessment">Overall Assessment</option>
-                    </select>
-                </div>
-                {% endif %}
+            <div class="selection-container">
+                <div class="selection-card">
+                    <form id="user-form">
+                        {% if users %}
+                        <div class="form-group">
+                            <label for="user-select" class="form-label">Select User:</label>
+                            <select id="user-select" class="form-select">
+                                {% for user in users %}
+                                <option value="{{ user.user_id }}">{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
 
-                <button type="submit" class="btn btn-primary w-100">Submit</button>
-            </form>
+                        {% if games %}
+                        <div class="form-group">
+                            <label for="game-select" class="form-label">Select Game:</label>
+                            <select id="game-select" class="form-select">
+                                {% for game in games %}
+                                <option value="{{ game.Level_ID }}">{{ game.Name }}</option>
+                                {% endfor %}
+                                <option value="overall_assessment">Overall Assessment</option>
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary w-100">Submit</button>
+                    </form>
+                </div>
+            </div>
+            <div id="results-container"></div>
         </div>
     </div>
-    <div id="results-container"></div>
 
     <!-- Modal for AI Analysis -->
     <div class="modal fade" id="aiAnalysisModal" tabindex="-1" aria-labelledby="aiAnalysisModalLabel"
