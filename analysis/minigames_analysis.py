@@ -239,3 +239,15 @@ def cleanup_llm_response(text):
     text = re.sub(r"<[^>]+>", "", text)  # html tags
     text = re.sub(r"\n{3,}", "\n\n", text)  # extra lines
     return text.strip()
+
+def search_minigames_by_name(query: str):
+    like_query = f"%{query.lower()}%"
+    query = text("""
+        SELECT Level_ID, Game_ID, REPLACE(Name, '<br>', ' - ') AS Name
+        FROM ima_game_level
+        WHERE LOWER(Name) LIKE :like_query
+        ORDER BY Game_ID, Level_ID;
+    """)
+    with engine.connect() as conn:
+        rows = conn.execute(query, {"like_query": like_query}).fetchall()
+    return [dict(r._mapping) for r in rows]

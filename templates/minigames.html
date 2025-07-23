@@ -69,12 +69,23 @@
         <!-- Main Content -->
         <div class="main">
             {% include 'common/header.html' %}
+            
+            <div class="container my-3 d-flex justify-content-between align-items-start">
 
-            <div class="container my-3 text-end dropdown" id="filterDropdown">
+                <input type="search" id="gameSearchInput" class="form-control w-50 me-3" placeholder="Search minigames by name...">
+
+                <select id="sortSelect" class="form-select w-auto">
+                    <option value="">Sort By</option>
+                    <option value="name_asc">Name (A–Z)</option>
+                    <option value="name_desc">Name (Z–A)</option>
+                    <option value="score_desc">Average Score (High → Low)</option>
+                    <option value="score_asc">Average Score (Low → High)</option>
+                </select>
+
                 <button class="btn btn-primary dropdown-toggle" id="filterButton" data-bs-toggle="dropdown"
                     aria-expanded="false">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                        class="bi bi-funnel-fill" viewBox="0 0 16 16">
+                        class="bi bi-funnel-fill" veriewBox="0 0 16 16">
                         <path
                             d="M1.5 1.5a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 .4.8L10 8.293V14.5a.5.5 0 0 1-.8.4l-2-1.5a.5.5 0 0 1-.2-.4V8.293L1.1 1.8a.5.5 0 0 1 .4-.8z" />
                     </svg>
@@ -279,6 +290,8 @@
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
         });
+
+        
     </script>
 </body>
 

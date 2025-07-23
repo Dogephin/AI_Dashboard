@@ -1,34 +1,45 @@
 document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('gamesGrid');
+    const searchInput = document.getElementById('gameSearchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const form = document.getElementById('filterForm');
+
+    let currentSearchQuery = '';
+    let currentSort = '';
+    let currentFilters = {};
+    const sliderConfigs = {
+        total_attempts: [0, 500],
+        completion_rate: [0, 100],
+        average_score: [0, 500],
+        failed: [0, 300]
+    };
+    const sliders = {};
 
     fetch('/api/minigames')
         .then(r => r.json())
-        .then(games => {
-            // Step 1: Fetch stats for each game
-            return Promise.all(games.map(game =>
+        .then(games => Promise.all(
+            games.map(game =>
                 fetch(`/api/minigames/${game.Level_ID}/stats`)
                     .then(r => r.json())
                     .then(stats => {
-                        game.stats = stats.summary;
+                        game.stats = stats; // Store full stats
                         return game;
                     })
                     .catch(err => {
                         console.error(`Stats failed for Game ID ${game.Level_ID}`, err);
-                        return game; // still include even if stats fail
+                        return game;
                     })
-            ));
-        })
+            )
+        ))
         .then(gamesWithStats => {
-            grid.innerHTML = ''; // Clear loading
-
-            // Store globally if you want to re-filter later
+            grid.innerHTML = '';
             window._allGames = gamesWithStats;
 
-            // Initial render
-            gamesWithStats.forEach(game => grid.appendChild(createCard(game)));
+            renderGames();
 
-            // Hook up filtering logic
             setupFilterForm(gamesWithStats);
+            setupSearch();
+            setupSort();
         })
         .catch(err => {
             console.error('Failed to load mini-games:', err);
@@ -47,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 View AI Summary
             </button>
         `;
-
         card.querySelector('button').addEventListener('click', () =>
             toggleDetails(game.Level_ID)
         );
@@ -55,163 +65,60 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    function toggleDetails(gameId) {
-        fetch(`/api/minigames/${gameId}/stats`)
-            .then(r => r.json())
-            .then(data => {
-                const s = data.summary;
-                const topMinor = data.top_minor || [];
-                const topSevere = data.top_severe || [];
+    function renderGames() {
+        let filtered = [...window._allGames];
 
-                const html = `
-                    <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
-                    <p><strong>Unique Users:</strong> ${s.unique_users}</p>
-                    <p><strong>Completed:</strong> ${s.completed}</p>
-                    <p><strong>Failed:</strong> ${s.failed}</p>
-                    <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
-                    <p><strong>Average Score:</strong> ${s.average_score}</p>
-
-                    <h5 class="mt-3">Top Minor Errors</h5>
-                    <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
-
-                    <h5 class="mt-3">Top Severe Errors</h5>
-                    <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
-                `;
-
-                showStatsModal(html);
-            })
-            .catch(err => {
-                console.error(err);
-                showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
+        // Apply filters
+        for (const key in currentFilters) {
+            const { min, max } = currentFilters[key];
+            filtered = filtered.filter(g => {
+                const val = g.stats?.summary?.[key];
+                return val !== undefined && val >= min && val <= max;
             });
+        }
+
+        // Apply search
+        if (currentSearchQuery) {
+            filtered = filtered.filter(g =>
+                g.Name.toLowerCase().includes(currentSearchQuery)
+            );
+        }
+
+        // Apply sort
+        if (currentSort === 'name_asc') {
+            filtered.sort((a, b) => a.Name.localeCompare(b.Name));
+        } else if (currentSort === 'name_desc') {
+            filtered.sort((a, b) => b.Name.localeCompare(a.Name));
+        } else if (currentSort === 'score_asc') {
+            filtered.sort((a, b) => (a.stats?.summary?.average_score || 0) - (b.stats?.summary?.average_score || 0));
+        } else if (currentSort === 'score_desc') {
+            filtered.sort((a, b) => (b.stats?.summary?.average_score || 0) - (a.stats?.summary?.average_score || 0));
+        }
+
+        grid.innerHTML = '';
+        filtered.forEach(g => grid.appendChild(createCard(g)));
     }
 
-    function attachAiButton(gameId) {
-        const btn = document.querySelector(`button.ai-summary-btn[data-game-id="${gameId}"]`);
-        if (!btn) return;
-
-        btn.addEventListener('click', () => {
-            const modalContent = document.getElementById('aiModalBody');
-            const cancelBtn = document.getElementById('btn-cancel-analysis');
-            const downloadBtn = document.getElementById('btn-download-analysis');
-            const regenerateBtn = document.getElementById("btn-regenerate-analysis");
-
-            // Initial state: show cancel, hide download and regenerate
-            if (cancelBtn) cancelBtn.classList.remove('d-none');
-            if (downloadBtn) downloadBtn.classList.add('d-none');
-            if (regenerateBtn) regenerateBtn.classList.add('d-none');
-
-            showAiModal('<em>Generating summary…</em>');
-
-            fetch(`/api/minigames/${gameId}/ai-summary`)
-                .then(r => r.json())
-                .then(res => {
-                    const result = res.analysis || 'No summary available.';
-                    const html = marked.parse(result);
-                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
-
-                    // Enable download if result is non-empty
-                    if (downloadBtn && result.trim() !== '' && result.trim() !== 'No gameplay data available for this mini-game.') {
-                        downloadBtn.classList.remove('d-none');
-                        downloadBtn.onclick = () => {
-                            const blob = new Blob([result], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                        };
-                    }
-
-                    // Hide cancel after load
-                    if (cancelBtn) cancelBtn.classList.add('d-none');
-
-                    // Show regenerate button
-                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
-                        regenerateBtn.classList.remove('d-none'); // Show regenerate button
-                        regenerateBtn.onclick = function () {
-                            // Hide regenerate button and download button, show cancel button
-                            if (downloadBtn) downloadBtn.classList.add('d-none');
-                            if (regenerateBtn) regenerateBtn.classList.add('d-none');
-                            if (cancelBtn) cancelBtn.classList.remove('d-none');
-
-                            modalContent.innerHTML = `
-                                <div class="d-flex align-items-center justify-content-center flex-column py-4">
-                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <div class="mt-3">Regenerating analysis... please wait.</div>
-                                </div>
-                            `;
-
-                            fetch(`/api/minigames/${gameId}/ai-summary?force_refresh=true`)
-                                .then(r => r.json())
-                                .then(res => {
-                                    const result = res.analysis || 'No summary available.';
-
-                                    // Show regenerate button and download button, hide cancel button
-                                    if (downloadBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
-                                        downloadBtn.classList.remove('d-none');
-                                    }
-                                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
-                                        regenerateBtn.classList.remove('d-none');
-                                    }
-                                    if (cancelBtn) cancelBtn.classList.add('d-none');
-
-
-                                    const html = marked.parse(result);
-                                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
-
-                                    // Update download button action
-                                    downloadBtn.onclick = () => {
-                                        const blob = new Blob([result], { type: 'text/plain' });
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
-                                    };
-                                })
-                                .catch(err => {
-                                    console.error("Regenerate error:", err);
-                                    modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
-                                });
-                        };
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    modalContent.innerHTML = '<div class="text-danger">Failed to load summary.</div>';
-                    if (cancelBtn) cancelBtn.classList.add('d-none');
-                });
-        });
+    function setupSearch() {
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                currentSearchQuery = searchInput.value.toLowerCase().trim();
+                renderGames();
+            });
+        }
     }
 
-    /* ────────────────────────────────────────────────────────────
-        Filter logic setup
-    ──────────────────────────────────────────────────────────── */
-    const sliderConfigs = {
-        total_attempts: [0, 500],
-        completion_rate: [0, 100],
-        average_score: [0, 500],
-        failed: [0, 300]
-    };
-
-    const sliders = {};
+    function setupSort() {
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                currentSort = sortSelect.value;
+                renderGames();
+            });
+        }
+    }
 
     function setupFilterForm(games) {
-        const form = document.getElementById('filterForm');
         if (!form) return;
-
-        // Prevent dropdown close on clicks inside
-        document.querySelector('#filterDropdown .dropdown-menu')
-            ?.addEventListener('click', e => e.stopPropagation());
 
         Object.keys(sliderConfigs).forEach(key => {
             const [min, max] = sliderConfigs[key];
@@ -235,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }).data('ionRangeSlider');
 
-            // Update slider when user types into inputs
             minInput.addEventListener('input', () => {
                 if (!sliders[key].options.disable) {
                     const newMin = parseInt(minInput.value) || min;
@@ -251,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Enable/disable sliders + inputs based on checkbox
         form.querySelectorAll('input[type="checkbox"][name="filterTypes"]').forEach(cb => {
             cb.addEventListener('change', () => {
                 const key = cb.value;
@@ -278,36 +183,149 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Filter logic on submit
         form.addEventListener('submit', e => {
             e.preventDefault();
-            const activeFilters = {};
+            currentFilters = {};
 
             form.querySelectorAll('input[type="checkbox"][name="filterTypes"]:checked').forEach(cb => {
                 const key = cb.value;
                 const slider = sliders[key];
-                activeFilters[key] = {
+                currentFilters[key] = {
                     min: slider.result.from,
                     max: slider.result.to
                 };
             });
 
-            const filtered = games.filter(game => {
-                const stats = game.stats || {};
-                for (const key in activeFilters) {
-                    const { min, max } = activeFilters[key];
-                    const val = stats[key];
-                    if (val === undefined || val < min || val > max) return false;
-                }
-                return true;
-            });
-
-            grid.innerHTML = '';
-            filtered.forEach(g => grid.appendChild(createCard(g)));
+            renderGames();
 
             const dropdown = bootstrap.Dropdown.getOrCreateInstance(document.getElementById('filterButton'));
             dropdown.hide();
         });
     }
 
+    function toggleDetails(gameId) {
+        fetch(`/api/minigames/${gameId}/stats`)
+            .then(r => r.json())
+            .then(data => {
+                const s = data.summary;
+                const topMinor = data.top_minor || [];
+                const topSevere = data.top_severe || [];
+
+                const html = `
+                    <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
+                    <p><strong>Unique Users:</strong> ${s.unique_users}</p>
+                    <p><strong>Completed:</strong> ${s.completed}</p>
+                    <p><strong>Failed:</strong> ${s.failed}</p>
+                    <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
+                    <p><strong>Average Score:</strong> ${s.average_score}</p>
+                    <h5 class="mt-3">Top Minor Errors</h5>
+                    <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+                    <h5 class="mt-3">Top Severe Errors</h5>
+                    <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+                `;
+                showStatsModal(html);
+            })
+            .catch(err => {
+                console.error(err);
+                showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
+            });
+    }
+
+    function attachAiButton(gameId) {
+        const btn = document.querySelector(`button.ai-summary-btn[data-game-id="${gameId}"]`);
+        if (!btn) return;
+
+        btn.addEventListener('click', () => {
+            const modalContent = document.getElementById('aiModalBody');
+            const cancelBtn = document.getElementById('btn-cancel-analysis');
+            const downloadBtn = document.getElementById('btn-download-analysis');
+            const regenerateBtn = document.getElementById("btn-regenerate-analysis");
+
+            if (cancelBtn) cancelBtn.classList.remove('d-none');
+            if (downloadBtn) downloadBtn.classList.add('d-none');
+            if (regenerateBtn) regenerateBtn.classList.add('d-none');
+
+            showAiModal('<em>Generating summary…</em>');
+
+            fetch(`/api/minigames/${gameId}/ai-summary`)
+                .then(r => r.json())
+                .then(res => {
+                    const result = res.analysis || 'No summary available.';
+                    const html = marked.parse(result);
+                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+
+                    if (downloadBtn && result.trim() !== '' && result.trim() !== 'No gameplay data available for this mini-game.') {
+                        downloadBtn.classList.remove('d-none');
+                        downloadBtn.onclick = () => {
+                            const blob = new Blob([result], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        };
+                    }
+
+                    if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
+                        regenerateBtn.classList.remove('d-none');
+                        regenerateBtn.onclick = function () {
+                            if (downloadBtn) downloadBtn.classList.add('d-none');
+                            if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                            if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                            modalContent.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="mt-3">Regenerating analysis... please wait.</div>
+                                </div>
+                            `;
+
+                            fetch(`/api/minigames/${gameId}/ai-summary?force_refresh=true`)
+                                .then(r => r.json())
+                                .then(res => {
+                                    const result = res.analysis || 'No summary available.';
+                                    const html = marked.parse(result);
+                                    modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+
+                                    if (downloadBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
+                                        downloadBtn.classList.remove('d-none');
+                                    }
+                                    if (regenerateBtn && result.trim() !== 'No gameplay data available for this mini-game.') {
+                                        regenerateBtn.classList.remove('d-none');
+                                    }
+                                    if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                                    downloadBtn.onclick = () => {
+                                        const blob = new Blob([result], { type: 'text/plain' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `[Minigame ${gameId}] - AI_ANALYSIS.txt`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    };
+                                })
+                                .catch(err => {
+                                    console.error("Regenerate error:", err);
+                                    modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
+                                });
+                        };
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    modalContent.innerHTML = '<div class="text-danger">Failed to load summary.</div>';
+                    if (cancelBtn) cancelBtn.classList.add('d-none');
+                });
+        });
+    }
 });
