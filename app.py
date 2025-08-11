@@ -5,6 +5,7 @@ from utils.cache import init_cache
 from config import Config
 
 import logging
+import socket
 
 # Import blueprints
 from routes.home import home_bp
@@ -37,6 +38,11 @@ app.register_blueprint(user_bp)
 app.register_blueprint(minigame_bp)
 
 init_cache(app)
+
+# Route to test round robin of nginx load balancing
+@app.route("/whoami")
+def whoami():
+    return f"Served by container: {socket.gethostname()}"
 
 if __name__ == "__main__":
     test_db_connection()
