@@ -2,3 +2,6 @@ Flask==3.1.1
 openai==1.87.0
 python-dotenv==1.1.0
 SQLAlchemy==2.0.41
+Flask-Caching==2.3.1
+mysql-connector-python
+requests
