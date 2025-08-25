@@ -3,14 +3,16 @@ const mysql = require('mysql2/promise');
 const ZongJi = require('@powersync/mysql-zongji');
 
 async function createPools() {
+    // Source DB (Watches This)
     const sourcePool = await mysql.createPool({
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        host: process.env.SOURCE_DB_HOST,
+        port: process.env.SOURCE_DB_PORT,
+        user: process.env.SOURCE_DB_USER,
+        password: process.env.SOURCE_DB_PASSWORD,
         database: process.env.DB_WATCH_DATABASE
     });
 
+    // Cloud target DB (Receives Live Changes)
     const targetPool = await mysql.createPool({
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
@@ -36,11 +38,12 @@ async function startListener() {
     const primaryKeyCache = {};
     const tableMap = {};
 
+    // Source DB (Watches This)
     const zongji = new ZongJi({
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        host: process.env.SOURCE_DB_HOST,
+        port: process.env.SOURCE_DB_PORT,
+        user: process.env.SOURCE_DB_USER,
+        password: process.env.SOURCE_DB_PASSWORD,
     });
 
     zongji.on('binlog', async (event) => {
