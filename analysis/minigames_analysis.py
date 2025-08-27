@@ -45,7 +45,7 @@ def get_list_of_minigames():
         SELECT Level_ID,
                Game_ID,
                REPLACE(Name, '<br>', ' - ') AS Name
-        FROM   ima_game_level
+        FROM   IMA_Game_Level
         ORDER  BY Game_ID, Level_ID;
         """
     )
@@ -87,10 +87,10 @@ def get_minigame_attempts(game_id: int):
                psgs.Results,
                psgs.Game_Start,
                psgs.Game_End
-        FROM   ima_plan_game              AS pg
-        JOIN   ima_plan_session_game_status AS psgs
+        FROM   IMA_Plan_Game              AS pg
+        JOIN   IMA_Plan_Session_Game_Status AS psgs
                    ON pg.Plan_Game_ID = psgs.Plan_Game_ID
-        JOIN   ima_plan_session           AS ps
+        JOIN   IMA_Plan_Session           AS ps
                    ON ps.Session_ID = psgs.Session_ID
         WHERE  pg.Level = :game_id;
         """
@@ -244,7 +244,7 @@ def search_minigames_by_name(query: str):
     like_query = f"%{query.lower()}%"
     query = text("""
         SELECT Level_ID, Game_ID, REPLACE(Name, '<br>', ' - ') AS Name
-        FROM ima_game_level
+        FROM IMA_Game_Level
         WHERE LOWER(Name) LIKE :like_query
         ORDER BY Game_ID, Level_ID;
     """)

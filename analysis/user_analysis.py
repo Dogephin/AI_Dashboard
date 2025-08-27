@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def get_list_of_users():
     query = text(
         """
-        SELECT DISTINCT Id as "user_id", Username as "username" FROM account
+        SELECT DISTINCT Id as "user_id", Username as "username" FROM Account
     """
     )
 
@@ -30,15 +30,15 @@ def get_list_of_games():
     query = text(
         """
         SELECT igl.Level_ID, igl.Game_ID, REPLACE(igl.Name, '<br>', ' - ') AS Name, ipg.Plan_Game_ID
-        FROM ima_plan_game AS ipg
-        JOIN ima_progression_sequence_level AS ipsl ON ipg.Sequence = ipsl.Sequence_ID
-        JOIN ima_game_level AS igl ON ipsl.Level_ID = igl.Level_ID
+        FROM IMA_Plan_Game AS ipg
+        JOIN IMA_Progression_Sequence_Level AS ipsl ON ipg.Sequence = ipsl.Sequence_ID
+        JOIN IMA_Game_Level AS igl ON ipsl.Level_ID = igl.Level_ID
 
         UNION
 
         SELECT igl.Level_ID, igl.Game_ID, REPLACE(igl.Name, '<br>', ' - ') AS Name, ipg.Plan_Game_ID
-        FROM ima_plan_game AS ipg
-        JOIN ima_game_level AS igl ON ipg.Level = igl.Level_ID  -- assumes `ima_plan_game.Level` points to `ima_game_level.Level_ID`
+        FROM IMA_Plan_Game AS ipg
+        JOIN IMA_Game_Level AS igl ON ipg.Level = igl.Level_ID  -- assumes `IMA_Plan_Game.Level` points to `IMA_Game_Level.Level_ID`
         ORDER BY Name;
     """
     )
@@ -71,9 +71,9 @@ def get_user_game_results(user_id, game_id):
         -- psgs.Plan_Game_ID
         psgs.Status, psgs.Game_Start, psgs.Game_End, psgs.Score, psgs.Results AS "Overall_Results"
         -- pg.Level
-        FROM ima_plan_session as ps
-        JOIN ima_plan_session_game_status as psgs ON ps.Session_ID = psgs.Session_ID
-        JOIN ima_plan_game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+        FROM IMA_Plan_Session as ps
+        JOIN IMA_Plan_Session_Game_Status as psgs ON ps.Session_ID = psgs.Session_ID
+        JOIN IMA_Plan_Game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
         WHERE ps.User_ID = :user_id AND pg.Level = :game_id
     """
     )
@@ -110,10 +110,10 @@ def get_user_all_games_results(user_id):
         psgs.Game_End, 
         psgs.Score, 
         psgs.Results AS "Overall_Results"
-        FROM ima_plan_session as ps
-        JOIN ima_plan_session_game_status as psgs ON ps.Session_ID = psgs.Session_ID
-        JOIN ima_plan_game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
-        JOIN ima_game_level as igl ON pg.Level = igl.Level_ID
+        FROM IMA_Plan_Session as ps
+        JOIN IMA_Plan_Session_Game_Status as psgs ON ps.Session_ID = psgs.Session_ID
+        JOIN IMA_Plan_Game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+        JOIN IMA_Game_Level as igl ON pg.Level = igl.Level_ID
         WHERE ps.User_ID = :user_id
         ORDER BY igl.Name, psgs.Game_Start
     """
@@ -402,8 +402,8 @@ def fetch_user_errors(user_id):
     query = text(
         """
         SELECT GS.results
-        FROM ima_plan_session_game_status AS GS
-        INNER JOIN ima_plan_session AS PS ON GS.Session_ID = PS.Session_ID
+        FROM IMA_Plan_Session_Game_Status AS GS
+        INNER JOIN IMA_Plan_Session AS PS ON GS.Session_ID = PS.Session_ID
         WHERE PS.User_ID = :user_id;
     """
     )
