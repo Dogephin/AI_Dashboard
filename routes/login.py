@@ -16,7 +16,7 @@ def login():
         db.close()
 
         if user:
-            session["user"] = user.Username
+            session["user_id"] = user.Id
             session["role"] = "TBD"
             flash("Login successful!", "success")
             return redirect(url_for("home.home"))  
