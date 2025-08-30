@@ -1,34 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% include 'common/head.html' %}
+  <title>Game Analysis Dashboard Login</title>
   <meta charset="UTF-8">
-  <title>Login</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
-  <div class="login-container">
-    <h2>Login</h2>
+<body class="login-page">
+   <div class="main">
+      <header>
+      <div class="header-content">
+              <div class="header-title">Game Analysis Dashboard Login</div>
+          </div>
+      </header>
+      <div class="login-wrapper">
+        <div class="form-container">
+          <p class="login-title">Login</p>
 
-    <!-- Show flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flash-messages">
-          {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+          <!-- Show flash messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          {% endwith %}
 
-    <form method="POST" action="{{ url_for('login.login') }}">
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username" required>
+          <form class="login-form" method="POST" action="{{ url_for('login.login') }}">
+            <div class="login-input-group">
+              <label for="username">Username</label>
+              <input type="text" name="username" id="username" required class="login-username">
+            </div>
 
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required>
-
-      <button type="submit">Login</button>
-    </form>
+            <div class="login-input-group">
+              <label for="password">Password</label>
+              <input type="password" name="password" id="password" required>
+            </div>
+            <br>
+            <div class="line"></div>
+            <button type="submit" class="sign">Login</button>
+          </form>
+        </div>
+    </div>
   </div>
 </body>
 </html>
