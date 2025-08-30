@@ -2,11 +2,13 @@ from flask import Blueprint, render_template, request, jsonify
 from analysis import minigames_analysis as mg
 from utils.context import get_llm_client
 from utils.cache import cache, generate_cache_key
+from utils.auth import login_required
 
 minigame_bp = Blueprint("minigame", __name__, template_folder="templates")
 
 
 @minigame_bp.route("/minigames")
+@login_required
 def minigames():
     return render_template(
         "minigames.html", header_title="Game Analysis Dashboard - Minigames"
@@ -14,6 +16,7 @@ def minigames():
 
 
 @minigame_bp.route("/api/minigames")
+@login_required
 def api_minigames_list():
     """
     Return a JSON array of all mini-games (Level_ID, Game_ID, Name).
@@ -24,6 +27,7 @@ def api_minigames_list():
 
 
 @minigame_bp.route("/api/minigames/<int:game_id>/stats")
+@login_required
 def api_minigame_stats(game_id):
     """
     Aggregate numeric stats + grouped error buckets for one mini-game.
@@ -50,6 +54,7 @@ def api_minigame_stats(game_id):
 
 
 @minigame_bp.route("/api/minigames/<int:game_id>/ai-summary")
+@login_required
 def api_minigame_ai_summary(game_id):
     """
     Generate an LLM-powered executive summary for the selected mini-game.

@@ -2,11 +2,14 @@ from flask import Blueprint, render_template, request, jsonify, g, current_app, 
 import utils.llm as llm
 import os
 import shutil
+from utils.auth import login_required
+
 
 settings_bp = Blueprint("settings", __name__, template_folder="templates")
 
 
 @settings_bp.route("/settings", methods=["GET", "POST"])
+@login_required
 def settings():
 
     if request.method == "POST":
@@ -51,6 +54,7 @@ def settings():
 
 
 @settings_bp.route("/settings/clear-cache", methods=["POST"])
+@login_required
 def clear_cache():
     cache_dir = current_app.config.get("CACHE_DIR")
 

@@ -17,8 +17,9 @@ def login():
 
         if user:
             session["user"] = user.Username
+            session["role"] = "TBD"
             flash("Login successful!", "success")
-            return redirect(url_for("home.home"))  # adjust if your home route is different
+            return redirect(url_for("home.home"))  
         else:
             flash("Invalid username or password", "danger")
 
@@ -28,5 +29,6 @@ def login():
 @login_bp.route("/logout")
 def logout():
     session.pop("user", None)
+    session.clear()
     flash("You have been logged out.", "info")
     return redirect(url_for("login.login"))

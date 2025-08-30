@@ -2,11 +2,14 @@ from flask import Blueprint, render_template, request, jsonify
 from analysis import overall_analysis as oa
 from utils.context import get_llm_client
 from utils.cache import generate_cache_key, cache
+from utils.auth import login_required
+
 
 overall_bp = Blueprint("overall", __name__, template_folder="templates")
 
 
 @overall_bp.route("/api/analysis/avg-scores")
+@login_required
 def api_avg_scores_analysis():
     avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()
     if not avg_scores:
@@ -32,6 +35,7 @@ def api_avg_scores_analysis():
 
 
 @overall_bp.route("/api/analysis/error-frequency")
+@login_required
 def api_error_frequency_analysis():
     results = oa.get_error_frequency_results()
     if not results:
@@ -54,6 +58,7 @@ def api_error_frequency_analysis():
 
 
 @overall_bp.route("/api/analysis/performance-duration")
+@login_required
 def api_performance_duration_analysis():
     duration_data = oa.get_duration_vs_errors()
     if not duration_data:
@@ -78,6 +83,7 @@ def api_performance_duration_analysis():
 
 
 @overall_bp.route("/api/analysis/overall-user")
+@login_required
 def api_overall_user_analysis():
     results2 = oa.get_user_results()
     if not results2:
@@ -100,6 +106,7 @@ def api_overall_user_analysis():
 
 
 @overall_bp.route("/overall")
+@login_required
 def overall():
     # Average Scores per Minigame
     avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()

@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, jsonify
 from analysis import user_analysis as ua
 from utils.context import get_llm_client
 from utils.cache import cache, generate_cache_key
+from utils.auth import login_required
+
 
 import json
 import datetime
@@ -10,6 +12,7 @@ user_bp = Blueprint("user", __name__, template_folder="templates")
 
 
 @user_bp.route("/user", methods=["GET", "POST"])
+@login_required
 def user():
     users = ua.get_list_of_users()
     games = ua.get_list_of_games()
@@ -155,6 +158,7 @@ def user():
 
 
 @user_bp.route("/generate-ai-prompt", methods=["POST"])
+@login_required
 def mistakes():
     data = request.get_json()
     items = data.get("items", [])
