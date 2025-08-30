@@ -13,6 +13,7 @@ from routes.settings import settings_bp
 from routes.overall import overall_bp
 from routes.user import user_bp
 from routes.minigame import minigame_bp
+from routes.login import login_bp
 
 app = Flask(__name__)
 app.config["AI-TYPE"] = "API"  # Default to API model
@@ -36,6 +37,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(overall_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(minigame_bp)
+app.register_blueprint(login_bp)
 
 init_cache(app)
 

@@ -1168,3 +1168,54 @@ a.sidebar-link:hover {
     transform: rotate(45deg);
     transition: all 0.2s ease-out;
 }
+
+.login-container {
+  width: 300px;
+  margin: 80px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #f9f9f9;
+}
+
+.login-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-container label {
+  display: block;
+  margin-top: 10px;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+.login-container button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.flash-messages {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.flash-messages li {
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.flash-messages .success { background: #d4edda; color: #155724; }
+.flash-messages .danger { background: #f8d7da; color: #721c24; }
+.flash-messages .info { background: #d1ecf1; color: #0c5460; }

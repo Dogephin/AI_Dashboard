@@ -35,6 +35,9 @@ class Config:
 
     DB_URI = f"mysql+mysqlconnector://{SQL_USER}:{SQL_PASSWORD}@{SQL_HOST}:{SQL_PORT}/{SQL_DATABASE}"
 
+    SECRET_KEY = os.environ["SECRET_KEY"]
+
+
 
 # ? Usage in app.py:
 # app.config.from_object(Config)
