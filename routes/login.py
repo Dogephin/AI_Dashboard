@@ -22,6 +22,14 @@ def login():
 
         if user:
             session["user_id"] = user.Id
+            
+            username = user.Username.lower()
+            
+            if "teacher" in username:
+                session["role"] = "teacher"
+            else:
+                session["role"] = "admin"  
+
             session["username"] = user.Username
             session["role"] = "TBD"
             flash("Login successful!", "success")

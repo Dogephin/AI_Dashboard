@@ -1,3 +1,4 @@
+from flask import session
 from sqlalchemy import text
 from utils.db import engine
 import json
@@ -9,15 +10,28 @@ logger = logging.getLogger(__name__)
 
 
 def get_list_of_users():
-    query = text(
-        """
-        SELECT DISTINCT Id as "user_id", Username as "username" FROM Account
-    """
-    )
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    print("DEBUG session user_id:", user_id)
+
+    if role == "teacher":
+        query = text("""
+            SELECT DISTINCT Id as "user_id", Username as "username"
+            FROM Account A
+            INNER JOIN IMA_Admin_User IAU ON A.Id = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+        """)
+        params = {"user_id": user_id}
+    else:
+        query = text("""
+            SELECT DISTINCT Id as "user_id", Username as "username"
+            FROM Account
+        """)
+        params = {}  
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query , params)
             users = [dict(row._mapping) for row in result.fetchall()]
         logger.info(f"Fetched {len(users)} unique users from the database.")
         return users

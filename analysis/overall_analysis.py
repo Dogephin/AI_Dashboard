@@ -7,17 +7,30 @@ import re
 import logging
 from datetime import datetime
 from sqlalchemy import bindparam
+from flask import session
+
 
 logger = logging.getLogger(__name__)
 
 
 # -- Error Frequency Over Time --
 def get_error_frequency_results():
-    query = text("SELECT results FROM IMA_Plan_Session_Game_Status")
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text("""SELECT IPSGS.results 
+                    FROM IMA_Plan_Session_Game_Status IPSGS
+                    INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+                    INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+                    WHERE IAU.Admin_ID = :user_id""")
+        params = {"user_id": user_id}
+    else:
+        query = text("SELECT results FROM IMA_Plan_Session_Game_Status")
+        params = {} 
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query , params)
             rows = result.fetchall()
 
         results = [dict(row._mapping) for row in rows]
@@ -109,11 +122,22 @@ def error_frequency_analysis(results, client):
 
 # -- Overall User Analysis --
 def get_user_results():
-    query = text("SELECT User_ID , results FROM IMA_Plan_Session ORDER BY User_ID")
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text("""SELECT IPS.User_ID , IPS.results 
+                     FROM IMA_Plan_Session IPS 
+                     INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+                     WHERE IAU.Admin_ID = :user_id
+                     ORDER BY IPS.User_ID""")
+        params = {"user_id": user_id}
+    else:
+        query = text("SELECT User_ID , results FROM IMA_Plan_Session ORDER BY User_ID")
+        params = {}
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query , params)
             rows = result.fetchall()
 
         results2 = [dict(row._mapping) for row in rows]
@@ -158,17 +182,33 @@ def overall_user_analysis(results2, client):
 
 # -- Session Duration vs Performance --
 def get_duration_vs_errors():
-    query = text(
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text(
+            """
+            SELECT IPSGS.game_start, IPSGS.game_end, IPSGS.score 
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+            AND IPSGS.game_start IS NOT NULL AND IPSGS.game_end IS NOT NULL AND score IS NOT NULL
         """
-        SELECT game_start, game_end, score 
-        FROM IMA_Plan_Session_Game_Status
-        WHERE game_start IS NOT NULL AND game_end IS NOT NULL AND score IS NOT NULL
-    """
-    )
+        )
+        params = {"user_id": user_id}
+    else:
+        query = text(
+            """
+            SELECT game_start, game_end, score 
+            FROM IMA_Plan_Session_Game_Status
+            WHERE game_start IS NOT NULL AND game_end IS NOT NULL AND score IS NOT NULL
+        """
+        )
+        params = {}
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query , params)
             rows = result.fetchall()
             logger.info(f"Fetched {len(rows)} rows for duration vs score analysis.")
     except Exception as e:
@@ -230,16 +270,33 @@ def performance_vs_duration(data, client):
 
 # -- Average Scores for all Minigames --
 def get_practice_assessment_rows():
-    query = text(
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text(
+            """
+            SELECT IPS.Session_ID, IPS.Results
+            FROM IMA_Plan_Session IPS
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+            AND IPS.Results LIKE '%Practice%'
         """
-        SELECT Session_ID, Results
-        FROM IMA_Plan_Session
-        WHERE Results LIKE '%Practice%'
-    """
-    )
+        )
+        params = {"user_id": user_id}
+
+    else:
+        query = text(
+            """
+            SELECT Session_ID, Results
+            FROM IMA_Plan_Session
+            WHERE Results LIKE '%Practice%'
+        """
+        )
+        params = {}
+
     try:
         with engine.connect() as conn:
-            result = conn.execute(query)
+            result = conn.execute(query , params)
             rows = result.fetchall()
 
         sessions = [dict(row._mapping) for row in rows]
@@ -272,18 +329,33 @@ def get_scores_for_sessions(session_ids):
     if not session_ids:
         print("[WARN] No session IDs provided to fetch scores.")
         return []
-
-    query = text(
+    role = session.get("role")  
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text(
+            """
+            SELECT IPSGS.Session_ID, IPSGS.score, IPSGS.results
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+            AND IPSGS.Session_ID IN :session_ids
         """
-        SELECT Session_ID, score, results
-        FROM IMA_Plan_Session_Game_Status
-        WHERE Session_ID IN :session_ids
-    """
-    ).bindparams(bindparam("session_ids", expanding=True))
+        ).bindparams(bindparam("session_ids", expanding=True))
+        params = {"user_id": user_id , "session_ids": session_ids}
+    else:
 
+        query = text(
+            """
+            SELECT Session_ID, score, results
+            FROM IMA_Plan_Session_Game_Status
+            WHERE Session_ID IN :session_ids
+        """
+        ).bindparams(bindparam("session_ids", expanding=True))
+        params = {"session_ids" : session_ids}
     try:
         with engine.connect() as conn:
-            result = conn.execute(query, {"session_ids": session_ids})
+            result = conn.execute(query, params)
             rows = result.fetchall()
         return [dict(row._mapping) for row in rows]
     except Exception as e:
