@@ -31,7 +31,6 @@ def login():
                 session["role"] = "admin"  
 
             session["username"] = user.Username
-            session["role"] = "TBD"
             flash("Login successful!", "success")
             return redirect(url_for("home.home"))
         else:
