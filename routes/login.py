@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 import hashlib
 from .models import SessionLocal, User
 
-login_bp = Blueprint("login", __name__ , template_folder="templates")
+login_bp = Blueprint("login", __name__, template_folder="templates")
+
 
 @login_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -12,14 +13,19 @@ def login():
         hashed_password = hashlib.md5(password.encode()).hexdigest()
 
         db = SessionLocal()
-        user = db.query(User).filter_by(Username=username, Password=hashed_password).first()
+        user = (
+            db.query(User)
+            .filter_by(Username=username, Password=hashed_password)
+            .first()
+        )
         db.close()
 
         if user:
             session["user_id"] = user.Id
+            session["username"] = user.Username
             session["role"] = "TBD"
             flash("Login successful!", "success")
-            return redirect(url_for("home.home"))  
+            return redirect(url_for("home.home"))
         else:
             flash("Invalid username or password", "danger")
 

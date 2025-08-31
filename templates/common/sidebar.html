@@ -40,6 +40,10 @@
         </li>
     </ul>
     <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <i class="bi bi-person-circle"></i>
+            <span>{{ session['username'] if 'username' in session else 'Guest' }}</span>
+        </div>
         <a href="{{ url_for('login.logout') }}" class="sidebar-link">
             <i class="bi bi-box-arrow-left"></i>
             <span>Logout</span>

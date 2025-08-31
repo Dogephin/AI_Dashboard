@@ -1173,6 +1173,26 @@ a.sidebar-link:hover {
     font-weight: bold;
 }
 
+.sidebar-user {
+    padding: 0.625rem 1.625rem;
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    border-left: 3px solid transparent;
+    font-weight: bold;
+}
+
+.sidebar-user i {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+}
+
+#sidebar:not(.expand) .sidebar-user span {
+    display: none;
+}
+
 /* Login */
 .login-page {
     display: flex;
