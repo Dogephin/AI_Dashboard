@@ -319,7 +319,26 @@ canvas {
 .btn.overall-analysis-btn:hover {
     background: #14532d;
 }
+.zoom-tooltip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    pointer-events: none; 
+    z-index: 10;
+    opacity: 0;
+    animation: fadeOut 3s forwards;
+}
 
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
 
 .results-summary-container {
     margin: 2rem auto;
