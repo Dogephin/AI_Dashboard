@@ -10,28 +10,32 @@ logger = logging.getLogger(__name__)
 
 
 def get_list_of_users():
-    role = session.get("role")  
+    role = session.get("role")
     user_id = session.get("user_id")
     print("DEBUG session user_id:", user_id)
 
     if role == "teacher":
-        query = text("""
+        query = text(
+            """
             SELECT DISTINCT Id as "user_id", Username as "username"
             FROM Account A
             INNER JOIN IMA_Admin_User IAU ON A.Id = IAU.User_ID
             WHERE IAU.Admin_ID = :user_id
-        """)
+        """
+        )
         params = {"user_id": user_id}
     else:
-        query = text("""
+        query = text(
+            """
             SELECT DISTINCT Id as "user_id", Username as "username"
             FROM Account
-        """)
-        params = {}  
+        """
+        )
+        params = {}
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query , params)
+            result = conn.execute(query, params)
             users = [dict(row._mapping) for row in result.fetchall()]
         logger.info(f"Fetched {len(users)} unique users from the database.")
         return users
@@ -80,15 +84,43 @@ def get_list_of_games():
 def get_user_game_results(user_id, game_id):
     query = text(
         """
-        SELECT
-        -- ps.Session_ID, ps.User_ID,
-        -- psgs.Plan_Game_ID
-        psgs.Status, psgs.Game_Start, psgs.Game_End, psgs.Score, psgs.Results AS "Overall_Results"
-        -- pg.Level
-        FROM IMA_Plan_Session as ps
-        JOIN IMA_Plan_Session_Game_Status as psgs ON ps.Session_ID = psgs.Session_ID
-        JOIN IMA_Plan_Game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
-        WHERE ps.User_ID = :user_id AND pg.Level = :game_id
+        WITH combined AS (
+            SELECT
+                ps.Session_ID, ps.User_ID, ps.Results,
+                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                psgs.Score, psgs.Results AS "Overall_Results",
+                CASE 
+                WHEN ps.Results LIKE '%Training%' 
+                    THEN MAX(CASE WHEN psl.Sequence_Order = 0 THEN psl.Level_ID END)
+                WHEN ps.Results LIKE '%Practice%' 
+                    THEN MAX(CASE WHEN psl.Sequence_Order = 1 THEN psl.Level_ID END)
+                END AS GameLevel
+            FROM IMA_Plan_Session AS ps
+            JOIN IMA_Plan_Session_Game_Status AS psgs ON ps.Session_ID = psgs.Session_ID
+            JOIN IMA_Plan_Game AS pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+            JOIN IMA_Progression_Sequence_Level AS psl ON pg.Sequence = psl.Sequence_ID
+            GROUP BY ps.Session_ID, pg.Plan_Game_ID
+
+            UNION
+
+            -- SELECT RESULTS THAT ARE NOT MATCHED ABOVE WITH NO PROGRESSION SEQUENCE (e.g. Assessment Levels)
+            SELECT
+                ps.Session_ID, ps.User_ID, ps.Results,
+                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                psgs.Score, psgs.Results AS "Overall_Results",
+                pg.Level AS GameLevel
+            FROM IMA_Plan_Session AS ps
+            JOIN IMA_Plan_Session_Game_Status AS psgs ON ps.Session_ID = psgs.Session_ID
+            JOIN IMA_Plan_Game AS pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM IMA_Progression_Sequence_Level psl2
+                WHERE pg.Sequence = psl2.Sequence_ID
+            )
+        )
+        SELECT *
+        FROM combined
+        WHERE User_ID = :user_id and GameLevel = :game_id;
     """
     )
 
