@@ -148,20 +148,57 @@ def get_user_all_games_results(user_id):
     """
     query = text(
         """
+        WITH combined AS (
+            SELECT
+                ps.Session_ID, ps.User_ID, ps.Results,
+                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                psgs.Score, psgs.Results AS "Overall_Results",
+                CASE 
+                    WHEN ps.Results LIKE '%Training%' 
+                        THEN MAX(CASE WHEN psl.Sequence_Order = 0 THEN psl.Level_ID END)
+                    WHEN ps.Results LIKE '%Practice%' 
+                        THEN MAX(CASE WHEN psl.Sequence_Order = 1 THEN psl.Level_ID END)
+                END AS GameLevel
+            FROM IMA_Plan_Session AS ps
+            JOIN IMA_Plan_Session_Game_Status AS psgs 
+                ON ps.Session_ID = psgs.Session_ID
+            JOIN IMA_Plan_Game AS pg 
+                ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+            JOIN IMA_Progression_Sequence_Level AS psl 
+                ON pg.Sequence = psl.Sequence_ID
+            GROUP BY ps.Session_ID, ps.User_ID, ps.Results,
+                    psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, 
+                    psgs.Game_End, psgs.Score, psgs.Results
+            UNION
+            SELECT
+                ps.Session_ID, ps.User_ID, ps.Results,
+                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                psgs.Score, psgs.Results AS "Overall_Results",
+                pg.Level AS GameLevel
+            FROM IMA_Plan_Session AS ps
+            JOIN IMA_Plan_Session_Game_Status AS psgs 
+                ON ps.Session_ID = psgs.Session_ID
+            JOIN IMA_Plan_Game AS pg 
+                ON psgs.Plan_Game_ID = pg.Plan_Game_ID
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM IMA_Progression_Sequence_Level psl2
+                WHERE pg.Sequence = psl2.Sequence_ID
+            )
+        )
         SELECT
-        pg.Level as Level_ID,
-        igl.Name as Game_Name,
-        psgs.Status, 
-        psgs.Game_Start, 
-        psgs.Game_End, 
-        psgs.Score, 
-        psgs.Results AS "Overall_Results"
-        FROM IMA_Plan_Session as ps
-        JOIN IMA_Plan_Session_Game_Status as psgs ON ps.Session_ID = psgs.Session_ID
-        JOIN IMA_Plan_Game as pg ON psgs.Plan_Game_ID = pg.Plan_Game_ID
-        JOIN IMA_Game_Level as igl ON pg.Level = igl.Level_ID
-        WHERE ps.User_ID = :user_id
-        ORDER BY igl.Name, psgs.Game_Start
+            c.GameLevel AS Level_ID,
+            REPLACE(igl.Name, '<br>', ' - ') AS Game_Name,
+            c.Status,
+            c.Game_Start,
+            c.Game_End,
+            c.Score,
+            c.Overall_Results
+        FROM combined c
+        JOIN IMA_Game_Level igl 
+            ON c.GameLevel = igl.Level_ID
+        WHERE c.User_ID = :user_id
+        ORDER BY igl.Name, c.Game_Start;
     """
     )
 
