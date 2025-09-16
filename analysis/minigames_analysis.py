@@ -201,18 +201,26 @@ def ai_summary_for_minigame(game_name: str, summary_stats: dict, errors: dict, c
     You are an expert training analyst.
 
     The mini-game **{game_name}** has the following aggregated metrics:
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Overall Performance
+    Summarize completion rate, number of attempts, average/min/max score, and inferred difficulty.
+
+    ## Frequent Mistakes
+    Describe the most common minor and severe errors and their implications on learning/performance.
+
+    ## Recommendations for Instructors/Designers
+    Give practical, actionable changes to content, pacing, scaffolding, or feedback loops.
+
+    ## Tips for Players
+    Give practical, actionable tips for improving performance in the next attempts.
+
+    Data to analyze:
+    SUMMARY_STATS:
     {json.dumps(summary_stats, indent=2)}
 
-    Errors observed (categorised, deduped):
+    ERROR_BUCKETS:
     {json.dumps(errors, indent=2)}
-
-    Please produce a concise but insightful report including:
-    • Overall performance (completion rate, difficulty)
-    • The most frequent mistakes and their implications
-    • Practical recommendations for instructors or designers
-    • Suggestions for players to improve
-
-    Use plain paragraphs, no markdown headings, no bullet symbols.
     """
 
     if callable(client):
@@ -235,7 +243,6 @@ def cleanup_llm_response(text):
     text = re.sub(r"(\*\*|__)(.*?)\1", r"\2", text)  # bold
     text = re.sub(r"(\*|_)(.*?)\1", r"\2", text)  # italics
     text = re.sub(r"`([^`]*)`", r"\1", text)  # inline code
-    text = re.sub(r"^\s{0,3}#{1,6}\s*", "", text, flags=re.M)  # headings
     text = re.sub(r"<[^>]+>", "", text)  # html tags
     text = re.sub(r"\n{3,}", "\n\n", text)  # extra lines
     return text.strip()
