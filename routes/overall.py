@@ -143,10 +143,16 @@ def overall():
         # analysis_text = oa.extract_relevant_text(analysis_response)
 
         binned = oa.bin_errors_over_time(results, bin_size=5)
-        time_bins = list(binned.keys())
-        warnings = [binned[t]["warnings"] for t in time_bins]
-        minors = [binned[t]["minors"] for t in time_bins]
-        severes = [binned[t]["severes"] for t in time_bins]
+        filtered_bins = {
+            t: counts
+            for t, counts in binned.items()
+            if counts["warnings"] > 0 or counts["minors"] > 0 or counts["severes"] > 0
+        }
+
+        time_bins = list(filtered_bins.keys())
+        warnings = [filtered_bins[t]["warnings"] for t in time_bins]
+        minors = [filtered_bins[t]["minors"] for t in time_bins]
+        severes = [filtered_bins[t]["severes"] for t in time_bins]
 
         chart_data = {
             "labels": time_bins,

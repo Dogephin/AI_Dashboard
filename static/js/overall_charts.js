@@ -45,10 +45,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     beginAtZero: true
                 },
                 x: {
-                    suggestedMin: 0,   // starting point
-                    suggestedMax: 20,  // how much you want to show initially
-                    // min: 0,
-                    // max: 20
+                    min: 0,
+                    max: 40
                 }
             }
         }
@@ -83,7 +81,6 @@ document.addEventListener("DOMContentLoaded", function () {
             legend: {
                 display: true
             },
-            // The `limits` object should be a direct child of the `zoom` object
             zoom: {
                 zoom: {
                     wheel: {
@@ -97,9 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 pan: {
                     enabled: true,
                     mode: 'xy',
-                    // The `limits` object should NOT be here
                 },
-                // This is the correct location for `limits`
                 limits: {
                     x: {
                         min: xMin,

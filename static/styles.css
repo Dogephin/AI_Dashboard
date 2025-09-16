@@ -131,10 +131,11 @@ a.card {
     margin-bottom: 2rem;
 }
 
-.chart-title {
+.chart-title-overall {
     font-size: 1.25rem;
     font-weight: bold;
     margin-bottom: 1rem;
+    color: black;
 }
 
 canvas {

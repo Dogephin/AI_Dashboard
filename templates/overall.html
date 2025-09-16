@@ -4,32 +4,6 @@
 <head>
     {% include 'common/head.html' %}
     <title>Game Analysis Dashboard - Overall</title>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-    <script defer src="{{ url_for('static', filename='js/overall_charts.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/overall_analysis.js') }}"></script> -->
-     <style>
-        .zoom-tooltip {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 5px;
-        font-size: 0.9em;
-        pointer-events: none;
-        z-index: 10;
-        opacity: 0;
-        animation: fadeOut 3s forwards;
-        }
-
-        @keyframes fadeOut {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
-        }
-    </style>
 </head>
 
 <body>
@@ -49,7 +23,7 @@
 
                         <!-- Bar Chart + Insight -->
                         <div style="flex: 1; min-width: 300px;">
-                            <div class="chart-title">Average vs Max Score (All Minigames)</div>
+                            <div class="chart-title-overall">Average vs Max Score (All Minigames)</div>
                             <canvas id="avgScoreChart" width="600" height="300"></canvas>
                             <div class="insights-title">Average Scores Analysis Insights:</div>
                             <button class="btn analyze-btn" data-type="avg-scores" title="Analyze this row"
@@ -66,7 +40,7 @@
 
                         <!-- Error Chart + Insight -->
                         <div style="flex: 1; min-width: 300px; position: relative;">
-                            <div class="chart-title">Error Frequency Over Time</div>
+                            <div class="chart-title-overall">Error Frequency Over Time</div>
                             <div class="zoom-tooltip">Zoom and Pan</div>
                             <canvas id="errorChart"></canvas>
                             <div class="insights-title">Error Frequency Analysis Insights:</div>
@@ -91,7 +65,7 @@
 
                         <!-- Scatter Chart + Insight -->
                         <div style="flex: 1; min-width: 300px; position: relative;" >
-                            <div class="chart-title">Performance vs Duration</div>
+                            <div class="chart-title-overall">Performance vs Duration</div>
                             <div class="zoom-tooltip">Zoom and Pan</div>
                             <canvas id="scatterChart" width="600" height="300"></canvas>
                             <div class="insights-title">Performance vs Duration Insights:</div>
@@ -109,7 +83,7 @@
 
                         <!-- Overall User analysis -->
                         <div style="flex: 1; min-width: 300px;">
-                            <div class="chart-title">Overall User Analysis</div>
+                            <div class="chart-title-overall">Overall User Analysis</div>
                             <button class="btn analyze-btn" data-type="overall-user" title="Analyze this row"
                                 id="overall-btn">
                                 <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1"
@@ -185,7 +159,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- Data passed from Flask -->
     <script>

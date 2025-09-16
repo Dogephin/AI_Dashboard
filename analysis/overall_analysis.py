@@ -83,8 +83,24 @@ def bin_errors_over_time(results, bin_size=5):
 
 
 def error_frequency_analysis(results, client):
+    # Bin the data
     binned_data = bin_errors_over_time(results, bin_size=5)
-    binned_data_json = json.dumps(binned_data, indent=2)
+
+    # Keep only bins with any errors
+    non_empty_bins = {
+        k: v for k, v in binned_data.items() if sum(v.values()) > 0
+    }
+
+    try:
+        compact_bins = {
+            k: {"w": v["warnings"], "m": v["minors"], "s": v["severes"]}
+            for k, v in non_empty_bins.items()
+        }
+        binned_data_json = json.dumps(compact_bins)
+    except Exception as e:
+        print("[ERROR] Failed to serialize binned data:", e)
+        return [{"title": "Error", "content": "Failed to serialize data"}]
+
 
     prompt_text = f"""
     You are an expert training analyst.
@@ -92,14 +108,19 @@ def error_frequency_analysis(results, client):
     I have aggregated the warning, minor and severe errors from multiple game sessions into 5-second time bins.
     The data below shows the count of warnings and minors occurring in each time interval over the entire session duration:
 
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Error Spikes 
+    Identify when errors tend to spike. Mention which time bins show the highest counts.
+
+    ## Error Distribution Over Time
+    Explain whether warnings or minor errors tend to cluster early, mid, or late in sessions.
+
+    ## Recommendations
+    Provide clear, actionable recommendations to reduce or address error clustering.
+
+    Data to analyze:
     {binned_data_json}
-
-    Please provide a clear, concise analysis of this error frequency data, including:
-    - When errors tend to spike (which time bins have highest counts).
-    - Whether warnings or minors tend to cluster early, mid, or late in sessions.
-    - Provide recommendations if possible.
-
-    Please keep it as short and concise with clear titles.
     """
 
     if callable(client):
@@ -151,13 +172,14 @@ def get_user_results():
 def overall_user_analysis(results2, client):
     prompt_text = f"""
     You are an expert training analyst.
-    I have collected the overall data of all users. Here is the data:
 
+    Return exactly these sections as second-level headings (##) for each point. Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    Data to analyze:
     {results2}
 
     Can you analyze this data and provide the analysis and insights. Please focus
-    on overall user analysis for everyone instead of individuals. Please keep it short and number them.
-    Ensure the content of each key point is in bullet points.  
+    on overall user analysis for everyone instead of individuals. 
 
     """
 
@@ -176,7 +198,6 @@ def overall_user_analysis(results2, client):
         insights_text = response.choices[0].message.content
 
     cleaned_insights_overall_score = clear_formatting(insights_text)
-    print("hello", cleaned_insights_overall_score)
     return cleaned_insights_overall_score
 
 
@@ -238,16 +259,24 @@ def performance_vs_duration(data, client):
 
     prompt = f"""
     You are an expert training analyst.
-    Below is training session data showing session duration (in minutes) and the score achieved:
 
+    I have aggregated the training session data showing session duration (in minutes) and the score achieved.
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Relationship
+    Identify insights on the relationship between session duration and score.
+
+    ## Shorter vs Longer Sessions
+    Compare and contrast shorter versus longer sessions in terms of score results. 
+
+    ## Optimal Session Length
+    Provide clear, actionable recommendations for the users playing the game on optimal session length for best performance.
+
+    ## Additional Insights
+    Provide any additional insights regarding the performance vs duration of minigames.
+
+    Data to analyze:
     {json_data}
-
-    Please analyze:
-    - Is there a relationship between session duration and score?
-    - Do longer sessions lead to higher scores?
-    - Can we suggest an optimal session length range for best performance?
-
-    Provide concise and short analysis with bullet points or numbered insights.
     """
 
     if callable(client):
@@ -402,7 +431,6 @@ def calculate_avg_score_per_minigame(scores_rows):
 
 
 def get_avg_scores_for_practice_assessment():
-    print("[INFO] Starting average score computation for practice & assessment only.")
     sessions = get_practice_assessment_rows()
     session_ids = [s["Session_ID"] for s in sessions]
 
@@ -427,29 +455,27 @@ def avg_scores_for_practice_assessment_analysis(
 
     prompt = f"""
     You are an expert training analyst.
+
     I have collected the average and maximum scores achieved across multiple minigames during training sessions.
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
 
-    Each minigame has an average score based on all user sessions, and a max score representing the best possible performance.
+    ## Performance Gaps 
+    Which minigames have the largest gaps between average and max scores? What does this suggest about user challenges or skill ceilings.
 
-    Here is the data:
-    
+    ## Near-Optimal Games
+    Which minigames have averages close to their max? What might this indicate (e.g. game is easy, well-learned, or lacks depth).
+
+    ## Consistency vs. Variability
+    Do any minigames suggest high variability in performance (e.g. wide average-to-max gap with low average).
+
+    ## Skill Mastery Trends
+    What can you infer about skill progression or difficulty across the minigames.
+
+    ## Recommendations
+    Suggest actions based on your findings
+
+    Data to analyze:
     {formatted_data}
-
-    Each entry includes:
-    - average_score: Mean score achieved by all users.
-    - max_score: Highest score achieved in any session.
-
-    Please analyze and provide concise insights in a numbered list, covering:
-
-    1. Performance Gaps: Which minigames have the largest gaps between average and max scores? What does this suggest about user challenges or skill ceilings?
-    2. Near-Optimal Games: Which minigames have averages close to their max? What might this indicate (e.g. game is easy, well-learned, or lacks depth)?
-    3. Consistency vs. Variability: Do any minigames suggest high variability in performance (e.g. wide average-to-max gap with low average)?
-    4. Skill Mastery Trends: What can you infer about skill progression or difficulty across the minigames?
-    5. Recommendations: Suggest actions based on your findings, including:
-    - Focus areas for future training.
-    - Potential design adjustments.
-        
-    Format the response as a list of insights, number each title accordingly. Please end your response immediately after giving the response to the above.
     """
 
     if callable(client):
@@ -466,14 +492,12 @@ def avg_scores_for_practice_assessment_analysis(
         )
         insights_text = response.choices[0].message.content
 
-    print("average score one", insights_text)
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 
 
 def clear_formatting(response):
     relevant_text = response
-    relevant_text = re.sub(r"#+\s*", "", relevant_text)
     relevant_text = re.sub(r"\*\*(.*?)\*\*", r"\1", relevant_text)
     relevant_text = re.sub(r"\*(.*?)\*", r"\1", relevant_text)
     relevant_text = relevant_text.strip()
@@ -482,13 +506,29 @@ def clear_formatting(response):
     return final_points
 
 
-def parse_llm_insights(response_text):
-    pattern = r"(\d+\.\s+[^\n]+)([\s\S]*?)(?=\n\d+\.|\Z)"
-    matches = re.findall(pattern, response_text)
 
+def parse_llm_insights(response_text):
     insights = []
-    for title_line, content in matches:
-        title = re.sub(r"^\d+\.\s+", "", title_line).strip()
-        content = content.strip()
-        insights.append({"title": title, "content": content})
+
+    # First, try to match numbered points (existing behavior)
+    numbered_pattern = r"(\d+\.\s+[^\n]+)([\s\S]*?)(?=\n\d+\.|\Z)"
+    matches = re.findall(numbered_pattern, response_text)
+    if matches:
+        for title_line, content in matches:
+            title = re.sub(r"^\d+\.\s+", "", title_line).strip()
+            content = content.strip()
+            insights.append({"title": title, "content": content})
+        return insights
+
+    # If no numbered points, try headings (##)
+    heading_pattern = r"##\s*(.+?)(?=\n##|\Z)"
+    matches = re.findall(heading_pattern, response_text, flags=re.DOTALL)
+    if matches:
+        for section in matches:
+            # Split first line as title, rest as content
+            lines = section.strip().split("\n", 1)
+            title = lines[0].strip()
+            content = lines[1].strip() if len(lines) > 1 else ""
+            insights.append({"title": title, "content": content})
     return insights
+
