@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Table
                             const table = document.createElement('table');
                             table.className = 'table results-table mt-3';
-                            const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Status"];
+                            const keys = ["Game_Start", "Game_End", "Overall_Results", "Score", "Imprecisions", "Warnings", "Minor Errors", "Severe Errors", "Status"];
 
 
                             // Add "Attempt" column header

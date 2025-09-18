@@ -119,7 +119,11 @@ def get_user_game_results(user_id, game_id):
                 WHERE pg.Sequence = psl2.Sequence_ID
             )
         )
-        SELECT *
+        SELECT *,
+        JSON_LENGTH(Overall_Results->'$.errors.imprecision') AS "Imprecisions",
+        JSON_LENGTH(Overall_Results->'$.errors.warning')     AS "Warnings",
+        JSON_LENGTH(Overall_Results->'$.errors.minor')       AS "Minor Errors",
+        JSON_LENGTH(Overall_Results->'$.errors.severe')      AS "Severe Errors"
         FROM combined
         WHERE User_ID = :user_id and GameLevel = :game_id;
     """
@@ -485,17 +489,21 @@ def deduplicate(entries):
 def fetch_user_errors(user_id):
     thirty_days_ago = datetime.now() - timedelta(days=30)
 
-    query = text("""
+    query = text(
+        """
         SELECT GS.results
         FROM IMA_Plan_Session_Game_Status AS GS
         INNER JOIN IMA_Plan_Session AS PS ON GS.Session_ID = PS.Session_ID
         WHERE PS.User_ID = :user_id
         AND GS.Game_End >= :thirty_days_ago
-    """)
+    """
+    )
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query, {"user_id": user_id, "thirty_days_ago": thirty_days_ago})
+            result = conn.execute(
+                query, {"user_id": user_id, "thirty_days_ago": thirty_days_ago}
+            )
             rows = result.fetchall()
 
         # Storage for all error categories
