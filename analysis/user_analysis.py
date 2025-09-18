@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from statistics import mean
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -482,18 +483,19 @@ def deduplicate(entries):
 
 
 def fetch_user_errors(user_id):
-    query = text(
-        """
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+
+    query = text("""
         SELECT GS.results
         FROM IMA_Plan_Session_Game_Status AS GS
         INNER JOIN IMA_Plan_Session AS PS ON GS.Session_ID = PS.Session_ID
-        WHERE PS.User_ID = :user_id;
-    """
-    )
+        WHERE PS.User_ID = :user_id
+        AND GS.Game_End >= :thirty_days_ago
+    """)
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query, {"user_id": user_id})
+            result = conn.execute(query, {"user_id": user_id, "thirty_days_ago": thirty_days_ago})
             rows = result.fetchall()
 
         # Storage for all error categories
