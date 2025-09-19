@@ -8,29 +8,44 @@ import logging
 from datetime import datetime
 from sqlalchemy import bindparam
 from flask import session
-
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-
 # -- Error Frequency Over Time --
-def get_error_frequency_results():
+def get_error_frequency_results(start_month=None, end_month=None):
     role = session.get("role")  
     user_id = session.get("user_id")
+
+    start_dt, end_dt = parse_month_range(start_month, end_month)
+
+    # Base query string
     if role == "teacher":
-        query = text("""SELECT IPSGS.results 
-                    FROM IMA_Plan_Session_Game_Status IPSGS
-                    INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
-                    INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
-                    WHERE IAU.Admin_ID = :user_id""")
+        query_text = """
+            SELECT IPSGS.results, IPSGS.Game_Start
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+        """
         params = {"user_id": user_id}
     else:
-        query = text("SELECT results FROM IMA_Plan_Session_Game_Status")
-        params = {} 
+        query_text = "SELECT results, Game_Start FROM IMA_Plan_Session_Game_Status WHERE 1=1"
+        params = {}
+
+    # Add date filtering
+    if start_dt:
+        query_text += " AND IPSGS.Game_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPSGS.Game_Start <= :end_dt"
+        params["end_dt"] = end_dt
+
+    query = text(query_text)
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query , params)
+            result = conn.execute(query, params)
             rows = result.fetchall()
 
         results = [dict(row._mapping) for row in rows]
@@ -199,7 +214,6 @@ def overall_user_analysis(results2, client):
 
     cleaned_insights_overall_score = clear_formatting(insights_text)
     return cleaned_insights_overall_score
-
 
 # -- Session Duration vs Performance --
 def get_duration_vs_errors():
@@ -495,6 +509,117 @@ def avg_scores_for_practice_assessment_analysis(
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 
+# --Error Type vs Duration --
+def get_error_type_vs_score():
+    logger.info(f"CALLS HERE DOES IT")
+    role = session.get("role")
+    user_id = session.get("user_id")
+    if role == "teacher":
+        query = text("""
+            SELECT IPSGS.results
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+            AND IPSGS.score IS NOT NULL
+        """)
+        params = {"user_id": user_id}
+    else:
+        query = text("SELECT results FROM IMA_Plan_Session_Game_Status")
+        params = {}
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query, params)
+            rows = result.fetchall()
+    except Exception as e:
+        logger.error(f"Failed to fetch error vs score data: {e}")
+        return []
+
+    error_score_data = []
+    for row in rows:
+        try:
+            data = json.loads(row.results)
+            errors = data.get("errors", {})
+
+            # Sum all errors for this session
+            total_errors = sum(len(errors.get(err_type, [])) for err_type in ["warning", "minor", "severe"])
+
+            # Keep the breakdown if needed for analysis
+            error_counts = {
+                "warnings": len(errors.get("warning", [])),
+                "minors": len(errors.get("minor", [])),
+                "severes": len(errors.get("severe", []))
+            }
+
+            total_time_for_session = data.get("total-time", None)
+            error_score_data.append({
+                "errors": error_counts,       # breakdown for analysis
+                "total_errors": total_errors, # summed for plotting
+                "total_time": total_time_for_session
+            })
+        except Exception as e:
+            logger.warning(f"Skipping row due to JSON or score error: {e}")
+            continue
+
+    return error_score_data
+
+
+def error_type_vs_score_analysis(data, client):
+    json_data = json.dumps(data, indent=2)
+    prompt = f"""
+    You are an expert training analyst.
+
+    I have aggregated session data with the total number of errors (sum of warnings, minor, and severe) and the completion time in each session.
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Error Impact
+    Identify whether session duration results in fewer errors.
+
+    ## Patterns
+    Describe patterns where certain error types occur together and their effect on completion time.
+
+    ## Recommendations
+    Suggest interventions to reduce high-impact errors and help users complete sessions more efficiently.
+
+    Data to analyze:
+    {json_data}
+    """
+
+    if callable(client):
+        insights_text = client(prompt)
+    else:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        insights_text = response.choices[0].message.content
+
+    cleaned_insights = clear_formatting(insights_text)
+    return cleaned_insights
+
+def parse_month_range(start_month, end_month):
+    """
+    Convert 'YYYY-MM' strings into datetime objects for filtering.
+    """
+    start_dt = None
+    end_dt = None
+
+    if start_month:
+        # First day of the start month
+        start_dt = datetime.strptime(start_month, "%Y-%m")
+    if end_month:
+        # Last day of the end month
+        end_dt = datetime.strptime(end_month, "%Y-%m")
+        # Move to the next month and subtract 1 second to get last moment of the month
+        from calendar import monthrange
+        last_day = monthrange(end_dt.year, end_dt.month)[1]
+        end_dt = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
+
+    return start_dt, end_dt
 
 def clear_formatting(response):
     relevant_text = response
@@ -504,8 +629,6 @@ def clear_formatting(response):
 
     final_points = parse_llm_insights(relevant_text)
     return final_points
-
-
 
 def parse_llm_insights(response_text):
     insights = []

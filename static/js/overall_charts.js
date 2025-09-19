@@ -165,6 +165,39 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     });
+
+    // Error vs Completion Time Scatter Chart
+    const errorCompletionCtx = document.getElementById('ErrorVsCompletionScatterChart').getContext('2d');
+    if (errorVsCompletionDataFromFlask && errorVsCompletionDataFromFlask.datasets.length > 0) {
+        const dataPoints = errorVsCompletionDataFromFlask.datasets[0].data;
+        let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+        dataPoints.forEach(point => {
+            if (point.x < xMin) xMin = point.x;
+            if (point.x > xMax) xMax = point.x;
+            if (point.y < yMin) yMin = point.y;
+            if (point.y > yMax) yMax = point.y;
+        });
+        new Chart(errorCompletionCtx, {
+            type: 'scatter',
+            data: errorVsCompletionDataFromFlask,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Error Rate vs Completion Time' },
+                    legend: { display: true },
+                    zoom: {
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+                        pan: { enabled: true, mode: 'xy' },
+                        limits: { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Completion Time (seconds)' }, beginAtZero: true },
+                    y: { title: { display: true, text: 'Error Count' }, beginAtZero: true }
+                }
+            }
+        });
+    }
     function resetAnimation(element) {
         element.style.animation = 'none';
         element.offsetHeight; // Trigger a reflow

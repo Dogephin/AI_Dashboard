@@ -37,7 +37,10 @@ def api_avg_scores_analysis():
 @overall_bp.route("/api/analysis/error-frequency")
 @login_required
 def api_error_frequency_analysis():
-    results = oa.get_error_frequency_results()
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+    print(f"[DEBUG] Start Month and End Month: {start_month, end_month}")
+    results = oa.get_error_frequency_results(start_month=start_month, end_month=end_month)
     if not results:
         return jsonify({"text": "No data found."})
 
@@ -104,6 +107,28 @@ def api_overall_user_analysis():
 
     return jsonify(overall_user_analysis_response)
 
+# -- Error vs Completion Time Analysis --
+@overall_bp.route("/api/analysis/error-completion")
+@login_required
+def api_error_completion_analysis():
+    duration_vs_errors = oa.get_error_type_vs_score() 
+    if not duration_vs_errors:
+        return jsonify({"text": "No error vs completion data available."})
+
+    # Cache key
+    key = generate_cache_key("error_completion_analysis", {"data": duration_vs_errors})
+
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    error_completion_analysis_response = None if force_refresh else cache.get(key)
+
+    if not error_completion_analysis_response:
+        # Call the analysis function for error vs completion
+        error_completion_analysis_response = oa.error_type_vs_score_analysis(
+            duration_vs_errors, get_llm_client()
+        )
+        cache.set(key, error_completion_analysis_response)
+
+    return jsonify(error_completion_analysis_response)
 
 @overall_bp.route("/overall")
 @login_required
@@ -133,8 +158,12 @@ def overall():
         ],
     }
 
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")      
+    print(f"[DEBUG] Start Month and End Month: {start_month, end_month}")
+
     # Error Frequency vs Results
-    results = oa.get_error_frequency_results()
+    results = oa.get_error_frequency_results(start_month=start_month, end_month=end_month)
     if not results:
         analysis_text = "No data found."
         chart_data = {"labels": [], "datasets": []}
@@ -181,6 +210,22 @@ def overall():
         ]
     }
 
+    # Error vs Completion Time Chart Data
+    error_vs_completion_data_rows = oa.get_error_type_vs_score()
+    error_vs_completion_chart_data = {
+        "datasets": [
+            {
+                "label": "Errors vs Completion Time",
+                "data": [
+                    {"x": row["total_time"], "y": row.get("total_errors", 0)}
+                    for row in error_vs_completion_data_rows
+                ],
+                "backgroundColor": "purple",
+                "pointRadius": 4
+            }
+        ]
+    }
+
     # Overall User Performance
     results2 = oa.get_user_results()
     insights = "Loading..."
@@ -195,4 +240,5 @@ def overall():
         scatter_chart_data=scatter_chart_data,
         avg_score_chart_data=avg_score_chart_data,
         avg_scores_analysis=avg_scores_analysis,
+        error_vs_completion_chart_data=error_vs_completion_chart_data
     )

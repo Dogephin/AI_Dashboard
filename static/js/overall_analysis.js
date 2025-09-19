@@ -4,6 +4,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.analyze-btn').forEach(button => {
         button.addEventListener('click', () => generateAnalysis(button));
     });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("start_month")) {
+        document.getElementById("startMonth").value = params.get("start_month");
+    }
+    if (params.get("end_month")) {
+        document.getElementById("endMonth").value = params.get("end_month");
+    }
+});
+
+document.getElementById("applyFilterBtn").addEventListener("click", () => {
+    const startMonth = document.getElementById("startMonth").value; 
+    const endMonth = document.getElementById("endMonth").value;     
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (startMonth) params.set("start_month", startMonth);
+    else params.delete("start_month");
+
+    if (endMonth) params.set("end_month", endMonth);
+    else params.delete("end_month");
+
+    window.location.href = `/overall?${params.toString()}`;
 });
 
 document.getElementById('aiAnalysisModal').addEventListener('hidden.bs.modal', () => {
@@ -46,11 +69,16 @@ function generateAnalysis(button, forceRefresh = false) {
 
     aiModalInstance.show();
 
-    // Construct URL with force_refresh param if needed
-    let url = `/api/analysis/${type}`;
+    // Grab whatever is in the current URL (so we inherit start_month & end_month)
+    const params = new URLSearchParams(window.location.search);
+
+    // Add force_refresh flag if needed
     if (forceRefresh) {
-        url += '?force_refresh=true';
+        params.set("force_refresh", "true");
     }
+
+    let url = `/api/analysis/${type}?${params.toString()}`;
+
 
     // Fetch analysis
     fetch(url)
