@@ -5,6 +5,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let rowDataArray = [];
 
+    // Sorting function for tables
+    function sortTable(header, columnIndex, dataType) {
+        const table = header.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Get current sort direction
+        const currentSort = header.getAttribute('data-sort') || 'none';
+        let newSort = 'asc';
+
+        if (currentSort === 'asc') {
+            newSort = 'desc';
+        } else if (currentSort === 'desc') {
+            newSort = 'asc';
+        }
+
+        // Clear all sort indicators
+        table.querySelectorAll('th').forEach(th => {
+            th.setAttribute('data-sort', 'none');
+            const indicator = th.querySelector('.sort-indicator');
+            if (indicator) indicator.textContent = '↕';
+        });
+
+        // Set new sort direction
+        header.setAttribute('data-sort', newSort);
+        const indicator = header.querySelector('.sort-indicator');
+        if (indicator) {
+            indicator.textContent = newSort === 'asc' ? '↑' : '↓';
+        }
+
+        // Sort rows
+        rows.sort((a, b) => {
+            let aValue = a.children[columnIndex].textContent.trim();
+            let bValue = b.children[columnIndex].textContent.trim();
+
+            if (dataType === 'number') {
+                aValue = parseFloat(aValue.replace(/[^\d.-]/g, '')) || 0;
+                bValue = parseFloat(bValue.replace(/[^\d.-]/g, '')) || 0;
+
+                if (newSort === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
+                }
+            } else {
+                // Text sorting
+                if (newSort === 'asc') {
+                    return aValue.localeCompare(bValue);
+                } else {
+                    return bValue.localeCompare(aValue);
+                }
+            }
+        });
+
+        // Reappend sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Make sortTable function global so onclick handlers can access it
+    window.sortTable = sortTable;
+
     form.addEventListener('submit', (e) => {
         e.preventDefault(); // prevent page reload
 
@@ -216,13 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             table.innerHTML = `
                                 <thead>
                                     <tr>
-                                        <th>Performance Rank</th>
-                                        <th>Minigame</th>
-                                        <th>Average Score</th>
-                                        <th>Total Attempts</th>
-                                        <th>Best Score</th>
-                                        <th>Worst Score</th>
-                                        <th>Performance Level</th>
+                                        <th onclick="sortTable(this, 0, 'number')" style="cursor: pointer; user-select: none;">Performance Rank <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 1, 'text')" style="cursor: pointer; user-select: none;">Minigame <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 2, 'number')" style="cursor: pointer; user-select: none;">Average Score <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 3, 'number')" style="cursor: pointer; user-select: none;">Total Attempts <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 4, 'number')" style="cursor: pointer; user-select: none;">Best Score <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 5, 'number')" style="cursor: pointer; user-select: none;">Worst Score <span class="sort-indicator">↕</span></th>
+                                        <th onclick="sortTable(this, 6, 'text')" style="cursor: pointer; user-select: none;">Performance Level <span class="sort-indicator">↕</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -593,7 +654,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // Add "Attempt" column header
                             const thead = document.createElement('thead');
-                            thead.innerHTML = `<tr><th>Attempt</th>${keys.map(k => `<th>${k}</th>`).join('')}<th>AI Analysis</th></tr>`;
+                            thead.innerHTML = `<tr>
+                                <th onclick="sortTable(this, 0, 'number')" style="cursor: pointer; user-select: none;">Attempt <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 1, 'text')" style="cursor: pointer; user-select: none;">Game_Start <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 2, 'text')" style="cursor: pointer; user-select: none;">Game_End <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 3, 'text')" style="cursor: pointer; user-select: none;">Overall_Results <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 4, 'number')" style="cursor: pointer; user-select: none;">Score <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 5, 'number')" style="cursor: pointer; user-select: none;">Imprecisions <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 6, 'number')" style="cursor: pointer; user-select: none;">Warnings <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 7, 'number')" style="cursor: pointer; user-select: none;">Minor Errors <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 8, 'number')" style="cursor: pointer; user-select: none;">Severe Errors <span class="sort-indicator">↕</span></th>
+                                <th onclick="sortTable(this, 9, 'text')" style="cursor: pointer; user-select: none;">Status <span class="sort-indicator">↕</span></th>
+                                <th>AI Analysis</th>
+                            </tr>`;
                             table.appendChild(thead);
 
                             const tbody = document.createElement('tbody');
