@@ -1,6 +1,6 @@
 let aiModalInstance = null;
 
-document.addEventListener('DOMContentLoaded', () => { 
+document.addEventListener('DOMContentLoaded', async() => { 
     console.log("[DEBUG] DOM Loaded");
     document.querySelectorAll('.analyze-btn').forEach(button => {
         button.addEventListener('click', () => generateAnalysis(button));
@@ -186,3 +186,62 @@ function generateAnalysis(button, forceRefresh = false) {
             `;
         });
 }
+
+function renderStudentStatsTable(topBottomDataFromFlask) {
+    const tableBody = document.getElementById("student-stats-table");
+    if (!tableBody || !topBottomDataFromFlask) return;
+
+    tableBody.innerHTML = "";
+
+    const avgScoreMap = {};
+    topBottomDataFromFlask.top.forEach(([username, avg]) => avgScoreMap[username] = avg);
+    topBottomDataFromFlask.bottom.forEach(([username, avg]) => avgScoreMap[username] = avg);
+
+    const topUsernames = topBottomDataFromFlask.top.map(t => t[0]);
+    const bottomUsernames = topBottomDataFromFlask.bottom.map(t => t[0]);
+
+    const topRows = topBottomDataFromFlask.top_rows || [];
+    const bottomRows = topBottomDataFromFlask.bottom_rows || [];
+
+    const rowsMap = {};
+    [...topRows, ...bottomRows].forEach(r => {
+        if (!rowsMap[r.username]) {
+            rowsMap[r.username] = {
+                username: r.username,
+                completionRate: r.completion_rate,
+                gamesPlayed: r.games_played,
+                isTop: topUsernames.includes(r.username),
+                isBottom: bottomUsernames.includes(r.username)
+            };
+        }
+    });
+
+    const sortedRows = Object.values(rowsMap).sort((a, b) => {
+        if (a.isTop && !b.isTop) return -1;
+        if (!a.isTop && b.isTop) return 1;
+        if (a.isBottom && !b.isBottom) return 1;
+        if (!a.isBottom && b.isBottom) return -1;
+        return 0;
+    });
+
+    sortedRows.forEach((row, index) => {
+        const tr = document.createElement("tr");
+        tr.style.backgroundColor = row.isTop ? "#56a76aff" : row.isBottom ? "#a85158ff" : "#ffffff";
+
+        tr.innerHTML = `
+            <td style="padding:8px; border:1px solid #ccc; color: black;">${index + 1}</td>
+            <td style="padding:8px; border:1px solid #ccc; color: black;">${row.username}</td>
+            <td style="padding:8px; border:1px solid #ccc; color: black;">${avgScoreMap[row.username]?.toFixed(2) || 0}</td>
+            <td style="padding:8px; border:1px solid #ccc; color: black;">${row.completionRate?.toFixed(2) || 0}</td>
+            <td style="padding:8px; border:1px solid #ccc; color: black;">${row.gamesPlayed || 0}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+// Example call inside DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.topBottomDataFromFlask) {
+        renderStudentStatsTable(window.topBottomDataFromFlask);
+    }
+});

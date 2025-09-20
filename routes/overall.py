@@ -163,6 +163,30 @@ def api_students_improvement_analysis():
 
     return jsonify(student_improvement_analysis_response)
 
+# -- Top vs Bottom Students --
+@overall_bp.route("/api/analysis/top-bottom-students")
+@login_required
+def api_student_game_results_analysis():
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+
+    results = oa.get_student_game_results(start_month=start_month, end_month=end_month)
+
+    if not results:
+        return jsonify({"text": "No student game results found."})
+    
+    key = generate_cache_key("top-bottom-students", {"data": results})
+
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    top_bottom_rows_analysis_response = None if force_refresh else cache.get(key)
+
+    if not top_bottom_rows_analysis_response:
+        top_bottom_rows_analysis_response = oa.top_vs_bottom_analysis(
+            results, get_llm_client()
+        )
+        cache.set(key, top_bottom_rows_analysis_response)
+    
+    return jsonify(top_bottom_rows_analysis_response)
 
 @overall_bp.route("/overall")
 @login_required
@@ -262,7 +286,6 @@ def overall():
     student_improvement_data = oa.get_monthly_avg_scores_by_minigame(
         start_month=start_month, end_month=end_month
     )
-
     # Collect all unique months across all minigames
     all_months = sorted(
         {entry["month"] for game_data in student_improvement_data.values() for entry in game_data}
@@ -294,6 +317,11 @@ def overall():
         "datasets": datasets 
     }
 
+    # Top vs Bottom Students
+    top_bottom_data = oa.get_student_game_results(
+        start_month=start_month, end_month=end_month
+    )
+
     # Overall User Performance
     results2 = oa.get_user_results()
     insights = "Loading..."
@@ -310,4 +338,5 @@ def overall():
         avg_scores_analysis=avg_scores_analysis,
         error_vs_completion_chart_data=error_vs_completion_chart_data,
         studentImprovementChartData=student_improvement_chart_data,
+        top_bottom_data=top_bottom_data
     )

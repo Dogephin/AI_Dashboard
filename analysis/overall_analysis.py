@@ -664,6 +664,7 @@ def error_type_vs_score_analysis(data, client):
     cleaned_insights = clear_formatting(insights_text)
     return cleaned_insights
 
+
 # Calculate Student Improvements
 def get_monthly_avg_scores_by_minigame(start_month=None, end_month=None):
     role = session.get("role")
@@ -769,7 +770,7 @@ def trend_analysis_daily_scores(daily_avg_scores, client):
 
     ## Anomalies and Recommendations
     If there are sudden drops or spikes in scores, suggest possible reasons (e.g., difficulty of minigame, engagement issues) and provide actionable recommendations to improve student performance.
-    
+
     Data to analyze:
     {data_json}
     """
@@ -788,7 +789,175 @@ def trend_analysis_daily_scores(daily_avg_scores, client):
 
     return clear_formatting(insights_text)
 
+def get_student_game_results(start_month=None, end_month=None):
+    role = session.get("role")
+    user_id = session.get("user_id")
+    
+    start_dt, end_dt = parse_month_range(start_month, end_month)
 
+    # Build query
+    if role == "teacher":
+        query_text = """
+            SELECT IPSGS.Results AS results,
+                   IPSGS.Game_Start AS game_start,
+                   IPS.User_ID,
+                   A.username
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
+            INNER JOIN Account A ON IPS.User_ID = A.Id
+            WHERE IAU.Admin_ID = :user_id
+        """
+        params = {"user_id": user_id}
+    else:
+        query_text = """
+            SELECT IPSGS.Results AS results,
+                   IPSGS.Game_Start AS game_start,
+                   IPS.User_ID,
+                   A.username
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN Account A ON IPS.User_ID = A.Id
+            WHERE 1=1
+        """
+        params = {}
+
+    if start_dt:
+        query_text += " AND IPSGS.Game_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPSGS.Game_Start <= :end_dt"
+        params["end_dt"] = end_dt
+
+    query = text(query_text)
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(query, params)
+            rows = [dict(row._mapping) for row in result.fetchall()]
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch student game results: {e}")
+        return {"raw": [], "top": [], "bottom": [], "top_rows": [], "bottom_rows": []}
+
+    # Track performance and completion
+    performance = defaultdict(list)
+    completion_counts = defaultdict(lambda: {"completed": 0, "total": 0})
+
+    for row in rows:
+        try:
+            result_data = json.loads(row["results"])
+            score = result_data.get("final-score", 0)
+            performance[row["username"]].append(score)
+
+            status = result_data.get("status", "").lower()
+            completion_counts[row["username"]]["total"] += 1
+            if status == "complete":
+                completion_counts[row["username"]]["completed"] += 1
+        except Exception:
+            continue
+
+    avg_scores = {u: sum(s)/len(s) for u, s in performance.items() if s}
+    sorted_students = sorted(avg_scores.items(), key=lambda x: x[1], reverse=True)
+
+    top_usernames = {u for u, _ in sorted_students[:3]}
+    bottom_usernames = {u for u, _ in sorted_students[-3:]}
+
+    def simplify_rows(rows_list):
+        simplified = []
+        for r in rows_list:
+            try:
+                results_data = json.loads(r.get("results", "{}"))
+            except Exception:
+                results_data = {}
+            counts = completion_counts[r["username"]]
+            simplified.append({
+                "username": r["username"],
+                "completion_rate": round(counts["completed"]/counts["total"]*100, 2) if counts["total"]>0 else 0,
+                "games_played": counts["total"],
+                "status": results_data.get("status", ""),
+                "accuracy": results_data.get("accuracy", 0),
+                "total_time": results_data.get("total-time", 0)
+            })
+        return simplified
+
+    top_rows = simplify_rows([r for r in rows if r["username"] in top_usernames])
+    bottom_rows = simplify_rows([r for r in rows if r["username"] in bottom_usernames])
+
+    return {
+        "top": sorted_students[:3],
+        "bottom": sorted_students[-3:],
+        "top_rows": top_rows,
+        "bottom_rows": bottom_rows
+    }
+
+def top_vs_bottom_analysis(student_data, client):
+    """
+    Analyze top vs bottom students using AI, safely handling datetime objects.
+    Assumes student_data rows are already simplified with key fields.
+    """
+
+    def default_serializer(o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        raise TypeError(f"Type {type(o)} not serializable")
+
+    # Use the rows as-is; no further parsing needed
+    top_summary = student_data.get("top", [])
+    bottom_summary = student_data.get("bottom", [])
+    top_rows = student_data.get("top_rows", [])
+    bottom_rows = student_data.get("bottom_rows", [])
+
+    # Prepare JSON payload for AI
+    analysis_payload = {
+        "top_summary": top_summary,
+        "bottom_summary": bottom_summary,
+        "top_rows": top_rows,
+        "bottom_rows": bottom_rows
+    }
+
+    json_data = json.dumps(analysis_payload, indent=2, default=default_serializer)
+
+    # Construct AI prompt
+    prompt = f"""
+    You are an expert training analyst.
+
+    I have aggregated data on student performance from training sessions. Focus specifically on the top performers and bottom performers. 
+    Top and bottom summaries contain usernames and average scores. Detailed rows contain completion_rate, games_played, status, accuracy, and total_time for each game.
+
+    Return exactly these sections as second-level headings (##). Use short paragraphs, no bullet points, and avoid introducing the analysis before the first heading.
+
+    ## Performance Overview
+    Compare the top performers versus the bottom performers. Highlight key differences in scores, completion rates, and consistency.
+
+    ## Strengths of Top Performers
+    Describe patterns or behaviors that may explain why these students perform well. Mention completion rates, score distribution, or any notable trends.
+
+    ## Challenges of Bottom Performers
+    Explain possible reasons for lower performance. Highlight trends, low completion rates, or specific games where students struggled.
+
+    ## Actionable Recommendations
+    Suggest targeted interventions or strategies to help lower performers improve and to maintain or further enhance top performers’ results.
+
+    Data to analyze:
+    {json_data}
+    """
+
+    # Send prompt to AI
+    if callable(client):
+        insights_text = client(prompt)
+    else:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        insights_text = response.choices[0].message.content
+
+    return clear_formatting(insights_text)
+
+    
 def parse_month_range(start_month, end_month):
     """
     Convert 'YYYY-MM' strings into datetime objects for filtering.
