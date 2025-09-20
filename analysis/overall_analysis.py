@@ -622,7 +622,6 @@ def get_error_type_vs_score(start_month=None, end_month=None):
 
     return error_score_data
 
-
 def error_type_vs_score_analysis(data, client):
     json_data = json.dumps(data, indent=2)
     prompt = f"""
@@ -664,6 +663,131 @@ def error_type_vs_score_analysis(data, client):
 
     cleaned_insights = clear_formatting(insights_text)
     return cleaned_insights
+
+# Calculate Student Improvements
+def get_monthly_avg_scores_by_minigame(start_month=None, end_month=None):
+    role = session.get("role")
+    user_id = session.get("user_id")
+    start_dt, end_dt = parse_month_range(start_month, end_month)
+
+    # --- SQL query ---
+    if role == "teacher":
+        query_text = """
+            SELECT IPSGS.Game_Start, IPSGS.Results
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS 
+                ON IPSGS.Session_ID = IPS.Session_ID
+            INNER JOIN IMA_Admin_User IAU 
+                ON IPS.User_ID = IAU.User_ID
+            WHERE IAU.Admin_ID = :user_id
+              AND (IPS.Results LIKE '%Practice%' OR IPS.Results LIKE '%Training%' OR IPS.Results LIKE '%Assessment%')
+        """
+        params = {"user_id": user_id}
+    else:
+        query_text = """
+            SELECT IPSGS.Game_Start, IPSGS.Results
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            INNER JOIN IMA_Plan_Session IPS 
+                ON IPSGS.Session_ID = IPS.Session_ID
+            WHERE (IPS.Results LIKE '%Practice%' OR IPS.Results LIKE '%Training%' OR IPS.Results LIKE '%Assessment%')
+        """
+        params = {}
+
+    # Date filters
+    if start_dt:
+        query_text += " AND IPSGS.Game_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPSGS.Game_Start <= :end_dt"
+        params["end_dt"] = end_dt
+
+    query = text(query_text)
+
+    # --- Fetch rows ---
+    with engine.connect() as conn:
+        rows = [dict(row._mapping) for row in conn.execute(query, params).fetchall()]
+
+    # --- Aggregate: scores by minigame + month ---
+    scores_by_game_month = defaultdict(list)
+
+    for row in rows:
+        try:
+            data = json.loads(row["Results"])
+            score = data.get("final-score")
+            level_name = data.get("level_name", "")
+
+            # Strip Game Name
+            minigame_match = re.match(r"^(MG\d+\s+(Training|Practice))<br>", level_name)
+            if minigame_match:
+                minigame = minigame_match.group(1)
+            elif level_name == "Assessment":
+                minigame = "Assessment"
+            else:
+                minigame = None
+
+            if score is None or not minigame:
+                continue
+
+            month_key = row["Game_Start"].strftime("%Y-%m")
+            scores_by_game_month[(minigame, month_key)].append(score)
+        except Exception as e:
+            print(f"Error parsing row: {e}", flush=True)
+            continue
+
+    # --- Compute averages ---
+    results = defaultdict(list)
+    for (minigame, month_key), scores in scores_by_game_month.items():
+        avg_score = sum(scores) / len(scores)
+        results[minigame].append({"month": month_key, "average_score": avg_score})
+
+    # --- Sort months for each minigame ---
+    for minigame in results:
+        results[minigame] = sorted(results[minigame], key=lambda x: x["month"])
+
+    return results
+
+def trend_analysis_daily_scores(daily_avg_scores, client):
+    import json
+    data_json = json.dumps(daily_avg_scores, indent=2)
+
+    prompt = f"""
+    You are an expert training analyst.
+
+    I have collected the monthly average scores of students over the past month for different minigames.
+    Each object has keys: "date" and "average_score".
+
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Trend Line
+    Describe whether the scores are increasing, plateauing, or declining over the month. Identify general trends or anomalies.
+
+    ## Minigame Comparison
+    Highlight any differences in performance trends between minigames. Identify which minigames students perform best or struggle most with.
+
+    ## Interpretation
+    Explain what this trend suggests about student improvement. Are they sustaining growth, plateauing, or showing inconsistent performance?
+
+    ## Anomalies and Recommendations
+    If there are sudden drops or spikes in scores, suggest possible reasons (e.g., difficulty of minigame, engagement issues) and provide actionable recommendations to improve student performance.
+    
+    Data to analyze:
+    {data_json}
+    """
+
+    if callable(client):
+        insights_text = client(prompt)
+    else:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a data analyst."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        insights_text = response.choices[0].message.content
+
+    return clear_formatting(insights_text)
+
 
 def parse_month_range(start_month, end_month):
     """

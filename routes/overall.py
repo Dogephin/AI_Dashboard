@@ -138,6 +138,32 @@ def api_error_completion_analysis():
 
     return jsonify(error_completion_analysis_response)
 
+# -- Students Improvements --
+@overall_bp.route("/api/analysis/students-improvement")
+@login_required
+def api_students_improvement_analysis():
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+    student_improvement = oa.get_monthly_avg_scores_by_minigame(start_month=start_month, end_month=end_month) 
+    if not student_improvement:
+        return jsonify({"text": "No error vs completion data available."})
+
+    # Cache key
+    key = generate_cache_key("student_improvement", {"data": student_improvement})
+
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    student_improvement_analysis_response = None if force_refresh else cache.get(key)
+
+    if not student_improvement_analysis_response:
+        # Call the analysis function for error vs completion
+        student_improvement_analysis_response = oa.trend_analysis_daily_scores(
+            student_improvement, get_llm_client()
+        )
+        cache.set(key, student_improvement_analysis_response)
+
+    return jsonify(student_improvement_analysis_response)
+
+
 @overall_bp.route("/overall")
 @login_required
 def overall():
@@ -232,6 +258,42 @@ def overall():
         ]
     }
 
+    # --- Student Improvements Monthly ---
+    student_improvement_data = oa.get_monthly_avg_scores_by_minigame(
+        start_month=start_month, end_month=end_month
+    )
+
+    # Collect all unique months across all minigames
+    all_months = sorted(
+        {entry["month"] for game_data in student_improvement_data.values() for entry in game_data}
+    )
+
+    datasets = []
+    colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#1a1818", "#9467bd", 
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+        "#393b79", "#637939", "#8c6d31", "#843c39", "#7b4173"
+    ]
+
+    for i, (minigame, game_data) in enumerate(student_improvement_data.items()):
+        month_to_avg = {entry["month"]: entry["average_score"] for entry in game_data}
+        data_points = [month_to_avg.get(month, None) for month in all_months]  # align with labels
+
+        datasets.append({
+            "label": minigame,
+            "data": data_points,
+            "borderColor": colors[i % len(colors)],
+            "backgroundColor": colors[i % len(colors)],
+            "fill": False,
+            "tension": 0.2,
+            "pointRadius": 3
+        })
+
+    student_improvement_chart_data = {
+        "labels": all_months,
+        "datasets": datasets 
+    }
+
     # Overall User Performance
     results2 = oa.get_user_results()
     insights = "Loading..."
@@ -246,5 +308,6 @@ def overall():
         scatter_chart_data=scatter_chart_data,
         avg_score_chart_data=avg_score_chart_data,
         avg_scores_analysis=avg_scores_analysis,
-        error_vs_completion_chart_data=error_vs_completion_chart_data
+        error_vs_completion_chart_data=error_vs_completion_chart_data,
+        studentImprovementChartData=student_improvement_chart_data,
     )

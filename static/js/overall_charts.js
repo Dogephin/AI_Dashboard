@@ -198,6 +198,92 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+    const improvementCtx = document.getElementById('studentImprovementChart').getContext('2d');
+
+    if (studentImprovementChartDataFromFlask && studentImprovementChartDataFromFlask.datasets.length > 0) {
+
+        // Compute min and max for x (labels) and y (data points)
+        let xMin = 0;
+        let xMax = studentImprovementChartDataFromFlask.labels.length - 1;
+
+        let yMin = Infinity;
+        let yMax = -Infinity;
+
+        studentImprovementChartDataFromFlask.datasets.forEach(dataset => {
+            dataset.data.forEach((value, index) => {
+                if (value < yMin) yMin = value;
+                if (value > yMax) yMax = value;
+            });
+        });
+
+        // Optional: add padding to y limits
+        const padding = (yMax - yMin) * 0.1;
+        yMin = Math.max(0, yMin - padding);
+        yMax = yMax + padding;
+
+        new Chart(improvementCtx, {
+            type: 'line',
+            data: studentImprovementChartDataFromFlask,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Student Improvement Over Time'
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: {
+                                enabled: true
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy'
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'xy'
+                        },
+                        limits: {
+                            x: { min: xMin, max: xMax },
+                            y: { min: yMin, max: yMax }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Average Score'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        spanGaps: true
+                    }
+                }
+            }
+        });
+    }
+
+
     function resetAnimation(element) {
         element.style.animation = 'none';
         element.offsetHeight; // Trigger a reflow

@@ -48,14 +48,13 @@
                                 <span class="text">Generate</span>
                             </button>
                         </div>
-
-                        <!-- Error Chart + Insight -->
-                        <div style="flex: 1; min-width: 300px; position: relative;">
-                            <div class="chart-title-overall">Error Frequency Over Time</div>
+                         <!-- Student Scores Improvements -->
+                         <div style="flex: 1; min-width: 300px; position: relative;" >
+                            <div class="chart-title-overall">Student Improvements Over Time</div>
                             <div class="zoom-tooltip">Zoom and Pan</div>
-                            <canvas id="errorChart"></canvas>
-                            <div class="insights-title">Error Frequency Analysis Insights:</div>
-                            <button class="btn analyze-btn" data-type="error-frequency" title="Analyze this row"
+                            <canvas id="studentImprovementChart" width="600" height="300"></canvas>
+                            <div class="insights-title">Student Improvements Over Time Insights:</div>
+                            <button class="btn analyze-btn" data-type="students-improvement" title="Analyze this row"
                                 id="overall-btn">
                                 <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1"
                                     id="Layer_1" class="sparkle">
@@ -66,6 +65,8 @@
                                 <span class="text">Generate</span>
                             </button>
                         </div>
+
+                       
                     </div>
                 </div>
 
@@ -119,6 +120,23 @@
                         <div style="flex: 1; min-width: 300px;">
                             <div class="chart-title-overall">Overall User Analysis</div>
                             <button class="btn analyze-btn" data-type="overall-user" title="Analyze this row"
+                                id="overall-btn">
+                                <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1"
+                                    id="Layer_1" class="sparkle">
+                                    <path
+                                        d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z">
+                                    </path>
+                                </svg>
+                                <span class="text">Generate</span>
+                            </button>
+                        </div>
+                          <!-- Error Chart + Insight -->
+                        <div style="flex: 1; min-width: 300px; position: relative;">
+                            <div class="chart-title-overall">Error Frequency Over Time</div>
+                            <div class="zoom-tooltip">Zoom and Pan</div>
+                            <canvas id="errorChart"></canvas>
+                            <div class="insights-title">Error Frequency Analysis Insights:</div>
+                            <button class="btn analyze-btn" data-type="error-frequency" title="Analyze this row"
                                 id="overall-btn">
                                 <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" data-name="Layer 1"
                                     id="Layer_1" class="sparkle">
@@ -199,6 +217,7 @@
         const chartDataFromFlask = JSON.parse('{{ chart_data | tojson | safe }}');
         const scatterChartDataFromFlask = JSON.parse('{{ scatter_chart_data | tojson | safe }}');
         const errorVsCompletionDataFromFlask = JSON.parse('{{ error_vs_completion_chart_data | tojson | safe }}');
+        const studentImprovementChartDataFromFlask = JSON.parse('{{ studentImprovementChartData | tojson | safe }}');
         const avgScoreChartDataFromFlask = JSON.parse('{{ avg_score_chart_data | tojson | safe }}');
     </script>
 
