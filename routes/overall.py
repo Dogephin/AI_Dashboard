@@ -11,7 +11,9 @@ overall_bp = Blueprint("overall", __name__, template_folder="templates")
 @overall_bp.route("/api/analysis/avg-scores")
 @login_required
 def api_avg_scores_analysis():
-    avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+    avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment(start_month=start_month, end_month=end_month)
     if not avg_scores:
         return jsonify([])
 
@@ -39,8 +41,9 @@ def api_avg_scores_analysis():
 def api_error_frequency_analysis():
     start_month = request.args.get("start_month")
     end_month = request.args.get("end_month")
-    print(f"[DEBUG] Start Month and End Month: {start_month, end_month}")
+    # print(f"[DEBUG] Start Month and End Month Specific: {start_month, end_month}", flush=True)
     results = oa.get_error_frequency_results(start_month=start_month, end_month=end_month)
+    # print(f"[DEBUG] /api/analysis/error-frequency results length: {len(results) if results else 0}", flush=True)
     if not results:
         return jsonify({"text": "No data found."})
 
@@ -63,7 +66,10 @@ def api_error_frequency_analysis():
 @overall_bp.route("/api/analysis/performance-duration")
 @login_required
 def api_performance_duration_analysis():
-    duration_data = oa.get_duration_vs_errors()
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+    # print(f"[DEBUG] Start Month and End Month Specific Perf vs Dura: {start_month, end_month}", flush=True)
+    duration_data = oa.get_duration_vs_errors(start_month=start_month, end_month=end_month)
     if not duration_data:
         return jsonify({"text": "No session duration data available."})
 
@@ -111,7 +117,9 @@ def api_overall_user_analysis():
 @overall_bp.route("/api/analysis/error-completion")
 @login_required
 def api_error_completion_analysis():
-    duration_vs_errors = oa.get_error_type_vs_score() 
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+    duration_vs_errors = oa.get_error_type_vs_score(start_month=start_month, end_month=end_month) 
     if not duration_vs_errors:
         return jsonify({"text": "No error vs completion data available."})
 
@@ -133,8 +141,13 @@ def api_error_completion_analysis():
 @overall_bp.route("/overall")
 @login_required
 def overall():
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")      
+    print(f"[DEBUG] Start Month and End Month Overall: {start_month, end_month}", flush=True)
+
     # Average Scores per Minigame
-    avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment()
+    avg_scores, max_score_by_minigame = oa.get_avg_scores_for_practice_assessment(start_month=start_month, end_month=end_month)
+    print(f"[DEBUG] /overall avg score results length: {len(avg_scores) if avg_scores else 0}")
 
     avg_scores_analysis = "Loading..."
 
@@ -158,12 +171,9 @@ def overall():
         ],
     }
 
-    start_month = request.args.get("start_month")
-    end_month = request.args.get("end_month")      
-    print(f"[DEBUG] Start Month and End Month: {start_month, end_month}")
-
     # Error Frequency vs Results
     results = oa.get_error_frequency_results(start_month=start_month, end_month=end_month)
+    print(f"[DEBUG] /overall results length: {len(results) if results else 0}")
     if not results:
         analysis_text = "No data found."
         chart_data = {"labels": [], "datasets": []}
@@ -172,16 +182,11 @@ def overall():
         # analysis_text = oa.extract_relevant_text(analysis_response)
 
         binned = oa.bin_errors_over_time(results, bin_size=5)
-        filtered_bins = {
-            t: counts
-            for t, counts in binned.items()
-            if counts["warnings"] > 0 or counts["minors"] > 0 or counts["severes"] > 0
-        }
 
-        time_bins = list(filtered_bins.keys())
-        warnings = [filtered_bins[t]["warnings"] for t in time_bins]
-        minors = [filtered_bins[t]["minors"] for t in time_bins]
-        severes = [filtered_bins[t]["severes"] for t in time_bins]
+        time_bins = list(binned.keys())
+        warnings = [binned[t]["warnings"] for t in time_bins]
+        minors = [binned[t]["minors"] for t in time_bins]
+        severes = [binned[t]["severes"] for t in time_bins]
 
         chart_data = {
             "labels": time_bins,
@@ -193,7 +198,8 @@ def overall():
         }
 
     # Performance vs Duration Analysis
-    duration_data = oa.get_duration_vs_errors()
+    duration_data = oa.get_duration_vs_errors(start_month=start_month, end_month=end_month)
+    print(f"[DEBUG] /overall results length perf vs dura: {len(results) if results else 0}")
     duration_analysis = "Loading..."
 
     scatter_chart_data = {
@@ -211,7 +217,7 @@ def overall():
     }
 
     # Error vs Completion Time Chart Data
-    error_vs_completion_data_rows = oa.get_error_type_vs_score()
+    error_vs_completion_data_rows = oa.get_error_type_vs_score(start_month=start_month, end_month=end_month)
     error_vs_completion_chart_data = {
         "datasets": [
             {

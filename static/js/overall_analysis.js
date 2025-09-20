@@ -1,18 +1,50 @@
 let aiModalInstance = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { 
+    console.log("[DEBUG] DOM Loaded");
     document.querySelectorAll('.analyze-btn').forEach(button => {
         button.addEventListener('click', () => generateAnalysis(button));
     });
 
+    // Pre-fill month inputs from URL
     const params = new URLSearchParams(window.location.search);
+    console.log("[DEBUG] URL params:", Object.fromEntries(params));
+
+    const startInput = document.getElementById("startMonth");
+    const endInput = document.getElementById("endMonth");
+
     if (params.get("start_month")) {
-        document.getElementById("startMonth").value = params.get("start_month");
+        startInput.value = params.get("start_month");
+        console.log("[DEBUG] Pre-fill startMonth:", startInput.value);
     }
     if (params.get("end_month")) {
-        document.getElementById("endMonth").value = params.get("end_month");
+        endInput.value = params.get("end_month");
+        console.log("[DEBUG] Pre-fill endMonth:", endInput.value);
+    }
+
+    // Apply Filter button
+    const applyBtn = document.getElementById("applyFilterBtn");
+    if (applyBtn) {
+        applyBtn.addEventListener("click", (event) => {
+            event.preventDefault(); 
+            console.log("[DEBUG] Apply Filter button clicked");
+
+            const startMonth = startInput.value;
+            const endMonth = endInput.value;
+            console.log("[DEBUG] Input values:", startMonth, endMonth);
+
+            const newParams = new URLSearchParams();
+            if (startMonth) newParams.set("start_month", startMonth);
+            if (endMonth) newParams.set("end_month", endMonth);
+
+            console.log("[DEBUG] Redirecting to URL:", `/overall?${newParams.toString()}`);
+            window.location.href = `/overall?${newParams.toString()}`;
+        });
+    } else {
+        console.log("[DEBUG] Apply Filter button NOT found!");
     }
 });
+
 
 document.getElementById("applyFilterBtn").addEventListener("click", () => {
     const startMonth = document.getElementById("startMonth").value; 

@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Average vs Max Score per Minigame (Practice)'
+                    text: 'Average vs Max Score per Minigame'
                 },
                 legend: {
                     display: true,

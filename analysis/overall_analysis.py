@@ -14,15 +14,17 @@ logger = logging.getLogger(__name__)
 
 # -- Error Frequency Over Time --
 def get_error_frequency_results(start_month=None, end_month=None):
+    # print(f"[DEBUG] get_error_frequency_results called with: start_month={start_month}, end_month={end_month}")
     role = session.get("role")  
     user_id = session.get("user_id")
 
     start_dt, end_dt = parse_month_range(start_month, end_month)
 
-    # Base query string
+    print(f"[DEBUG] Parsed dates: start_dt={start_dt}, end_dt={end_dt}, {user_id}")
+
     if role == "teacher":
         query_text = """
-            SELECT IPSGS.results, IPSGS.Game_Start
+            SELECT IPSGS.Results, IPSGS.Game_Start
             FROM IMA_Plan_Session_Game_Status IPSGS
             INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
             INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
@@ -30,7 +32,11 @@ def get_error_frequency_results(start_month=None, end_month=None):
         """
         params = {"user_id": user_id}
     else:
-        query_text = "SELECT results, Game_Start FROM IMA_Plan_Session_Game_Status WHERE 1=1"
+        query_text = """
+            SELECT IPSGS.Results, IPSGS.Game_Start
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            WHERE 1=1
+        """
         params = {}
 
     # Add date filtering
@@ -40,6 +46,7 @@ def get_error_frequency_results(start_month=None, end_month=None):
     if end_dt:
         query_text += " AND IPSGS.Game_Start <= :end_dt"
         params["end_dt"] = end_dt
+
 
     query = text(query_text)
 
@@ -61,7 +68,7 @@ def bin_errors_over_time(results, bin_size=5):
     max_time = 0
 
     for row in results:
-        raw_json = row.get("results")
+        raw_json = row.get("Results") or row.get("results")
         if not raw_json:
             continue
 
@@ -129,7 +136,13 @@ def error_frequency_analysis(results, client):
     Identify when errors tend to spike. Mention which time bins show the highest counts.
 
     ## Error Distribution Over Time
-    Explain whether warnings or minor errors tend to cluster early, mid, or late in sessions.
+    Explain whether certain error types cluster early, mid, or late in sessions. Highlight differences between warnings, minor, and severe errors.
+
+    ## Error Co-occurrence Patterns
+    Describe if certain types of errors tend to happen together within the same time bins or sequence in the session.
+
+    ## Severity Impact
+    Analyze whether severe errors contribute disproportionately to overall session difficulty or completion time compared to warnings and minor errors.
 
     ## Recommendations
     Provide clear, actionable recommendations to reduce or address error clustering.
@@ -161,7 +174,7 @@ def get_user_results():
     role = session.get("role")  
     user_id = session.get("user_id")
     if role == "teacher":
-        query = text("""SELECT IPS.User_ID , IPS.results 
+        query = text("""SELECT IPS.User_ID , IPS.results
                      FROM IMA_Plan_Session IPS 
                      INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
                      WHERE IAU.Admin_ID = :user_id
@@ -216,36 +229,56 @@ def overall_user_analysis(results2, client):
     return cleaned_insights_overall_score
 
 # -- Session Duration vs Performance --
-def get_duration_vs_errors():
+def get_duration_vs_errors(start_month=None, end_month=None):
     role = session.get("role")  
     user_id = session.get("user_id")
+    start_dt, end_dt = parse_month_range(start_month, end_month)
+
+    # Start with a string, not text()
     if role == "teacher":
-        query = text(
-            """
-            SELECT IPSGS.game_start, IPSGS.game_end, IPSGS.score 
+        query_text = """
+            SELECT IPSGS.Game_Start AS game_start,
+                   IPSGS.Game_End AS game_end,
+                   IPSGS.Score AS score
             FROM IMA_Plan_Session_Game_Status IPSGS
             INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
             INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
             WHERE IAU.Admin_ID = :user_id
-            AND IPSGS.game_start IS NOT NULL AND IPSGS.game_end IS NOT NULL AND score IS NOT NULL
+              AND IPSGS.Game_Start IS NOT NULL
+              AND IPSGS.Game_End IS NOT NULL
+              AND IPSGS.Score IS NOT NULL
         """
-        )
         params = {"user_id": user_id}
     else:
-        query = text(
-            """
-            SELECT game_start, game_end, score 
+        query_text = """
+            SELECT Game_Start AS game_start,
+                   Game_End AS game_end,
+                   Score AS score
             FROM IMA_Plan_Session_Game_Status
-            WHERE game_start IS NOT NULL AND game_end IS NOT NULL AND score IS NOT NULL
+            WHERE Game_Start IS NOT NULL
+              AND Game_End IS NOT NULL
+              AND Score IS NOT NULL
         """
-        )
         params = {}
+
+    # Add date filters (still strings)
+    if start_dt:
+        query_text += " AND IPSGS.Game_Start >= :start_dt" if role == "teacher" else " AND Game_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPSGS.Game_Start <= :end_dt" if role == "teacher" else " AND Game_End <= :end_dt"
+        params["end_dt"] = end_dt
+
+    # Only convert to TextClause here
+    query = text(query_text)
 
     try:
         with engine.connect() as conn:
             result = conn.execute(query , params)
             rows = result.fetchall()
-            logger.info(f"Fetched {len(rows)} rows for duration vs score analysis.")
+            logger.info(f"Fetched {len(rows)} rows for perf vs dura analysis.")
+            if rows:
+                logger.debug(f"[DEBUG] First row sample (duration): {dict(rows[0]._mapping)}")
     except Exception as e:
         logger.error(f"Query failed: {e}")
         return []
@@ -253,10 +286,11 @@ def get_duration_vs_errors():
     duration_score_data = []
     for row in rows:
         try:
-            start = row.game_start
-            end = row.game_end
+            row_data = row._mapping
+            start = row_data["game_start"]
+            end = row_data["game_end"]
+            score = int(row_data["score"])
             duration_minutes = round((end - start).total_seconds() / 60.0, 2)
-            score = int(row.score)
             if duration_minutes >= 0:
                 duration_score_data.append(
                     {"duration_minutes": duration_minutes, "score": score}
@@ -282,6 +316,9 @@ def performance_vs_duration(data, client):
 
     ## Shorter vs Longer Sessions
     Compare and contrast shorter versus longer sessions in terms of score results. 
+
+    ## Outliers and Extremes
+    Identify sessions with unusually high or low scores relative to duration. Suggest possible reasons for these outliers.
 
     ## Optimal Session Length
     Provide clear, actionable recommendations for the users playing the game on optimal session length for best performance.
@@ -312,30 +349,40 @@ def performance_vs_duration(data, client):
 
 
 # -- Average Scores for all Minigames --
-def get_practice_assessment_rows():
+def get_practice_assessment_rows(start_month=None, end_month=None):
+    print(f"[DEBUG] get_practice_assessment_rows called with: start_month={start_month}, end_month={end_month}")
     role = session.get("role")  
     user_id = session.get("user_id")
+
+    start_dt, end_dt = parse_month_range(start_month, end_month)
+
     if role == "teacher":
-        query = text(
-            """
-            SELECT IPS.Session_ID, IPS.Results
+        query_text = """
+            SELECT IPS.Session_ID, IPS.Results, IPS.Session_Start
             FROM IMA_Plan_Session IPS
             INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
             WHERE IAU.Admin_ID = :user_id
-            AND IPS.Results LIKE '%Practice%'
+            AND (IPS.Results LIKE '%Practice%' OR IPS.Results LIKE '%Training%')
         """
-        )
         params = {"user_id": user_id}
 
     else:
-        query = text(
-            """
-            SELECT Session_ID, Results
-            FROM IMA_Plan_Session
-            WHERE Results LIKE '%Practice%'
+        query_text = """
+            SELECT IPS.Session_ID, IPS.Results, IPS.Session_Start
+            FROM IMA_Plan_Session IPS
+            WHERE (Results LIKE '%Practice%' OR Results LIKE '%Training%')
         """
-        )
         params = {}
+    
+    # Add date filtering
+    if start_dt:
+        query_text += " AND IPS.Session_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPS.Session_Start <= :end_dt"
+        params["end_dt"] = end_dt
+
+    query = text(query_text)
 
     try:
         with engine.connect() as conn:
@@ -422,7 +469,7 @@ def calculate_avg_score_per_minigame(scores_rows):
 
             cleaned_name = re.sub(r"<.*?>", "", raw_name).strip()
 
-            match = re.match(r"(MG\d+\s+(?:Practice))", cleaned_name)
+            match = re.match(r"(MG\d+\s+(?:Practice|Training))", cleaned_name, re.IGNORECASE)
             game_key = match.group(1) if match else cleaned_name
 
             score = row.get("score")
@@ -444,8 +491,8 @@ def calculate_avg_score_per_minigame(scores_rows):
     return avg_scores, max_score_by_minigame
 
 
-def get_avg_scores_for_practice_assessment():
-    sessions = get_practice_assessment_rows()
+def get_avg_scores_for_practice_assessment(start_month=None, end_month=None):
+    sessions = get_practice_assessment_rows(start_month, end_month)
     session_ids = [s["Session_ID"] for s in sessions]
 
     scores_rows = get_scores_for_sessions(session_ids)
@@ -457,13 +504,12 @@ def get_avg_scores_for_practice_assessment():
 def avg_scores_for_practice_assessment_analysis(
     avg_scores, max_score_by_minigame, client
 ):
-    combined_scores = {
-        game: {
-            "average_score": round(avg_scores.get(game, 0), 2),
-            "max_score": max_score_by_minigame.get(game, 0),
-        }
+    combined_scores = [
+        {"game": game,
+        "average_score": round(avg_scores.get(game, 0), 2),
+        "max_score": max_score_by_minigame.get(game, 0)}
         for game in avg_scores
-    }
+    ]
 
     formatted_data = json.dumps(combined_scores, indent=2)
 
@@ -509,24 +555,36 @@ def avg_scores_for_practice_assessment_analysis(
     cleaned_insights_avg_score = clear_formatting(insights_text)
     return cleaned_insights_avg_score
 
-# --Error Type vs Duration --
-def get_error_type_vs_score():
-    logger.info(f"CALLS HERE DOES IT")
+# -- Total Error vs Completion Time --
+def get_error_type_vs_score(start_month=None, end_month=None):
     role = session.get("role")
     user_id = session.get("user_id")
+    start_dt, end_dt = parse_month_range(start_month, end_month)
+    
     if role == "teacher":
-        query = text("""
-            SELECT IPSGS.results
+        query_text = """
+            SELECT IPSGS.results, IPSGS.Game_Start
             FROM IMA_Plan_Session_Game_Status IPSGS
             INNER JOIN IMA_Plan_Session IPS ON IPSGS.Session_ID = IPS.Session_ID
             INNER JOIN IMA_Admin_User IAU ON IPS.User_ID = IAU.User_ID
             WHERE IAU.Admin_ID = :user_id
             AND IPSGS.score IS NOT NULL
-        """)
+        """
         params = {"user_id": user_id}
     else:
-        query = text("SELECT results FROM IMA_Plan_Session_Game_Status")
+        query_text = """SELECT IPSGS.Results AS results, IPSGS.Game_Start
+            FROM IMA_Plan_Session_Game_Status IPSGS
+            WHERE IPSGS.Score IS NOT NULL"""
         params = {}
+
+    if start_dt:
+        query_text += " AND IPSGS.Game_Start >= :start_dt"
+        params["start_dt"] = start_dt
+    if end_dt:
+        query_text += " AND IPSGS.Game_Start <= :end_dt"
+        params["end_dt"] = end_dt
+    
+    query = text(query_text)
 
     try:
         with engine.connect() as conn:
@@ -575,6 +633,12 @@ def error_type_vs_score_analysis(data, client):
 
     ## Error Impact
     Identify whether session duration results in fewer errors.
+
+    ## Severity Analysis
+    Compare the impact of different error types (warnings, minor, severe) on session completion time. Highlight which error types are most disruptive.
+
+    ## Co-occurrence Patterns
+    Identify if certain error types tend to occur together and whether these patterns affect completion time.
 
     ## Patterns
     Describe patterns where certain error types occur together and their effect on completion time.
