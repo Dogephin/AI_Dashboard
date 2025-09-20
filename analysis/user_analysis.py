@@ -87,8 +87,7 @@ def get_user_game_results(user_id, game_id):
         """
         WITH combined AS (
             SELECT
-                ps.Session_ID, ps.User_ID, ps.Results,
-                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                ps.User_ID, psgs.Game_Start, psgs.Game_End, psgs.Status, 
                 psgs.Score, psgs.Results AS "Overall_Results",
                 CASE 
                 WHEN ps.Results LIKE '%Training%' 
@@ -106,8 +105,7 @@ def get_user_game_results(user_id, game_id):
 
             -- SELECT RESULTS THAT ARE NOT MATCHED ABOVE WITH NO PROGRESSION SEQUENCE (e.g. Assessment Levels)
             SELECT
-                ps.Session_ID, ps.User_ID, ps.Results,
-                psgs.Plan_Game_ID, psgs.Status, psgs.Game_Start, psgs.Game_End, 
+                ps.User_ID, psgs.Game_Start, psgs.Game_End, psgs.Status, 
                 psgs.Score, psgs.Results AS "Overall_Results",
                 pg.Level AS GameLevel
             FROM IMA_Plan_Session AS ps
@@ -321,6 +319,10 @@ def analyze_single_attempt(results, client):
     The JSON will contain the following fields:
 
     `Game_Start` and `Game_End`: timestamps indicating the start and end of the attempt.
+    `Imprecisions`: count of imprecision errors.
+    `Warnings`: count of warning-level issues.
+    `Minor Errors`: count of minor mistakes.
+    `Severe Errors`: count of severe mistakes.
     `total-time`: the total time taken in seconds.
     `final-score`: the user's total score for the attempt.
     `accuracy`: percentage of accuracy based on correct actions performed.
@@ -338,10 +340,11 @@ def analyze_single_attempt(results, client):
     1. Provide a summary of the user's overall performance (e.g., efficiency, accuracy, completion).
     2. Highlight any severe or minor errors and what they indicate about the user's understanding or behavior.
     3. Comment on the sequence and timing of the user's actions — was the progression logical or disorganized?
-    4. Suggest specific areas for improvement, and which types of errors should be prioritized for training.
-    5. If performance was good, point out the strengths and what the user did especially well.
-    6. Provide any additional insights that could help in understanding the user's performance in this training module.
-    7. Provide a overall conclusion about the user's performance in this attempt.
+    4. Based on the error counts, what are the key areas where the user struggled and what is their current skill level?
+    5. Suggest specific areas for improvement, and which types of errors should be prioritized for training.
+    6. If performance was good, point out the strengths and what the user did especially well.
+    7. Provide any additional insights that could help in understanding the user's performance in this training module.
+    8. Provide a overall conclusion about the user's performance in this attempt.
 
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
     No overall title is needed, just start with the main paragraphs and its headings.
