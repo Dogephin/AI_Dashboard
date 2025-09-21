@@ -230,12 +230,25 @@ def analyze_results(results, analysis_type="single_game"):
     completed = [r for r in results if r["Status"] == "complete"]
     failed = [r for r in results if r["Status"] == "fail"]
 
+    error_trend = []
+
     # Create a trend based on order of attempts
     score_trend = [
         {"Attempt": f"Attempt {i+1}", "Score": r["Score"]}
         for i, r in enumerate(results)
         if r["Score"] is not None
     ]
+
+    for i, r in enumerate(results):
+    # Collect error counts per attempt
+        attempt_label = f"Attempt {i+1}"
+        error_trend.append({
+            "Attempt": attempt_label,
+            "Imprecisions": r.get("Imprecisions", 0),
+            "Warnings": r.get("Warnings", 0),
+            "Minor": r.get("Minor Errors", 0),
+            "Severe": r.get("Severe Errors", 0)
+        })
 
     return {
         "attempts": len(results),
@@ -245,6 +258,7 @@ def analyze_results(results, analysis_type="single_game"):
         "min_score": min(all_scores) if all_scores else 0,
         "max_score": max(all_scores) if all_scores else 0,
         "trend": score_trend,
+        "errors": error_trend,
     }
 
 
@@ -575,3 +589,54 @@ def categorize_mistakes(errors, client):
     final_output = trim_first_and_last_line(cleaned_ouput)
 
     return final_output
+
+def generate_error_trend_prompt(user_id, game_id, errors, scores , client):
+    """
+    Generate  AI prompt based on error trends and scores.
+    """
+
+    prompt_text = f"""
+    You are an expert training analyst. I will provide you with summarized gameplay error data
+    across multiple attempts for a serious game training module. Your task is to analyze performance trends.
+
+    Data includes counts of:
+    - Imprecisions
+    - Warnings
+    - Minor Errors
+    - Severe Errors
+    for each attempt. Scores achieved for each attempt are also provided.
+
+    Please provide a structured analysis with the following sections:
+
+    1. Overall Performance: Summarize the user's overall performance across all attempts.
+    2. Error Trends: Highlight trends, repeated issues, or spikes in error types.
+    3. Improvement with Practice: Analyze whether the user improves with practice; highlight improvement curves or stagnation points.
+    4. Strengths: Point out areas where the user performs consistently well.
+    5. Areas for Training: Suggest which error types should be prioritized for training.
+    6. Recommendations: Provide actionable insights for future attempts or training focus areas.
+
+    Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
+
+
+    Here is the data:
+    User ID: {user_id}
+    Game ID: {game_id}
+    Errors:
+    {json.dumps(errors, indent=2)}
+    Scores:
+    {scores}
+    """
+
+    if callable(client):
+        # If client is a callable function (e.g., local LLM)
+        return client(prompt_text)
+    else:
+        # API supports role-based messages
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt_text},
+            ],
+        )
+        return response.choices[0].message.content

@@ -4,10 +4,6 @@ from utils.context import get_llm_client
 from utils.cache import cache, generate_cache_key
 from utils.auth import login_required
 
-
-import json
-import datetime
-
 user_bp = Blueprint("user", __name__, template_folder="templates")
 
 
@@ -156,6 +152,23 @@ def user():
         games=games,
     )
 
+@user_bp.route("/analyze_chart", methods=["POST"])
+@login_required
+def generate_chart_prompt():
+    """
+    Receives chart error data from frontend and delegates AI prompt generation
+    to a separate function in another module.
+    """
+    data = request.get_json()
+    user_id = data.get("user_id")
+    game_id = data.get("game_id")
+    errors = data.get("errors", {})
+    scores = data.get("scores", [])
+
+    # Delegate prompt generation to another function
+    ai_prompt = ua.generate_error_trend_prompt(user_id, game_id, errors, scores , get_llm_client())
+
+    return jsonify({"ai_prompt": ai_prompt})
 
 @user_bp.route("/generate-ai-prompt", methods=["POST"])
 @login_required

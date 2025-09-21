@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let rowDataArray = [];
 
+    
     // Sorting function for tables
     function sortTable(header, columnIndex, dataType) {
         const table = header.closest('table');
@@ -270,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 }
                             });
+                            
 
                             // Detailed table for overall assessment
                             const table = document.createElement('table');
@@ -492,6 +494,244 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 },
                                 plugins: [ChartDataLabels]
+                            });
+
+                            const attempts = data.analysis.errors.map(item => item.Attempt);
+
+                            const imprecisions = data.analysis.errors.map(item => item.Imprecisions);
+                            const warnings = data.analysis.errors.map(item => item.Warnings);
+                            const minorErrors = data.analysis.errors.map(item => item.Minor);
+                            const severeErrors = data.analysis.errors.map(item => item.Severe);
+
+                            const errorCard = document.createElement('div');
+                            errorCard.className = 'stats-card mt-4';
+                            container.appendChild(errorCard);
+
+                            const errorCanvas = document.createElement('canvas');
+                            errorCanvas.id = 'error-trend-chart';
+                            errorCard.appendChild(errorCanvas);
+
+                            new Chart(errorCanvas, {
+                                type: 'line',
+                                data: {
+                                    labels: attempts,
+                                    datasets: [
+                                        {
+                                            label: 'Imprecisions',
+                                            data: imprecisions,
+                                            borderColor: 'rgba(54, 162, 235, 1)',
+                                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                            fill: false,
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6
+                                        },
+                                        {
+                                            label: 'Warnings',
+                                            data: warnings,
+                                            borderColor: 'rgba(255, 206, 86, 1)',
+                                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                                            fill: false,
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6
+                                        },
+                                        {
+                                            label: 'Minor Errors',
+                                            data: minorErrors,
+                                            borderColor: 'rgba(75, 192, 192, 1)',
+                                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                            fill: false,
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6
+                                        },
+                                        {
+                                            label: 'Severe Errors',
+                                            data: severeErrors,
+                                            borderColor: 'rgba(255, 99, 132, 1)',
+                                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                            fill: false,
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { position: 'top' },
+                                        title: {
+                                            display: true,
+                                            text: 'Error Trends Across Attempts',
+                                            font: { size: 18 }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: context => `${context.dataset.label}: ${context.parsed.y}`
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Attempt',
+                                                font: { size: 14, weight: 'bold' }
+                                            }
+                                        },
+                                        y: {
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: 'Count of Errors',
+                                                font: { size: 14, weight: 'bold' }
+                                            }
+                                        }
+                                    }
+                                },
+                                plugins: [ChartDataLabels]
+                            });
+
+                                const aiButton = document.createElement('button');
+                                aiButton.textContent = 'AI Analysis';
+                                aiButton.className = 'btn btn-primary mt-3'; // style with Bootstrap/Tailwind or your CSS
+                                errorCard.appendChild(aiButton);
+
+                            aiButton.addEventListener('click', () => {
+                                const downloadBtn = document.getElementById('btn-download-analysis');
+                                const cancelBtn = document.getElementById('btn-cancel-analysis');
+                                const regenerateBtn = document.getElementById("btn-regenerate-analysis");
+
+                                if (cancelBtn) cancelBtn.classList.remove('d-none');
+                                if (downloadBtn) downloadBtn.classList.add('d-none');
+                                if (regenerateBtn) regenerateBtn.classList.add('d-none');
+
+                                const modal = new bootstrap.Modal(document.getElementById('aiAnalysisModal'));
+                                const modalContent = document.getElementById('ai-analysis-content');
+                                modalContent.innerHTML = `
+                                    <div id="ai-loading" class="d-flex align-items-center justify-content-center flex-column py-4">
+                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div class="mt-3">Analyzing chart data... please wait.</div>
+                                    </div>
+                                `;
+                                modal.show();
+
+                                const payload = {
+                                    user_id: data.user_id,
+                                    game_id: data.game_id,
+                                    scores: scores,
+                                    errors: {
+                                        imprecisions,
+                                        warnings,
+                                        minorErrors,
+                                        severeErrors
+                                    }
+                                };
+
+                                fetch('/analyze_chart', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                })
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        const resultText = data.ai_prompt || 'No analysis result.';
+                                        const markdownHtml = marked.parse(resultText); // convert Markdown headings to HTML
+
+                                        modalContent.innerHTML = `
+                                            <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                                ${markdownHtml}
+                                            </div>
+                                        `;
+
+                                        // Download button
+                                        if (downloadBtn) {
+                                            if (resultText.trim() !== '') {
+                                                downloadBtn.classList.remove('d-none');
+                                                downloadBtn.onclick = () => {
+                                                    const blob = new Blob([resultText], { type: 'text/plain' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    const fileName = `[${data.game_id}] - AI_ANALYSIS_CHART - USER ${data.user_id}.txt`;
+                                                    a.href = url;
+                                                    a.download = fileName;
+                                                    document.body.appendChild(a);
+                                                    a.click();
+                                                    document.body.removeChild(a);
+                                                    URL.revokeObjectURL(url);
+                                                };
+                                            } else {
+                                                downloadBtn.classList.add('d-none');
+                                            }
+                                        }
+
+                                        // Regenerate button
+                                        if (regenerateBtn) {
+                                            regenerateBtn.classList.remove('d-none');
+                                            regenerateBtn.onclick = () => {
+                                                if (downloadBtn) downloadBtn.classList.add('d-none');
+                                                if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                                                if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                                                modalContent.innerHTML = `
+                                                    <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <div class="mt-3">Regenerating analysis... please wait.</div>
+                                                    </div>
+                                                `;
+
+                                                fetch('/user/analyze_chart', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ ...payload, force_refresh: true })
+                                                })
+                                                    .then(res => res.json())
+                                                    .then(data => {
+                                                        const regeneratedText = data.ai_prompt || 'No analysis result.';
+                                                        const markdownHtml = marked.parse(regeneratedText);
+
+                                                        modalContent.innerHTML = `
+                                                            <div class="px-3 py-2" style="font-size: 1rem; line-height: 1.6;">
+                                                                ${markdownHtml}
+                                                            </div>
+                                                        `;
+
+                                                        if (downloadBtn && regeneratedText.trim() !== '') {
+                                                            downloadBtn.classList.remove('d-none');
+                                                            downloadBtn.onclick = () => {
+                                                                const blob = new Blob([regeneratedText], { type: 'text/plain' });
+                                                                const url = URL.createObjectURL(blob);
+                                                                const a = document.createElement('a');
+                                                                const fileName = `[${data.game_id}] - AI_ANALYSIS_CHART - USER ${data.user_id}.txt`;
+                                                                a.href = url;
+                                                                a.download = fileName;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                document.body.removeChild(a);
+                                                                URL.revokeObjectURL(url);
+                                                            };
+                                                        }
+                                                        if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                                        if (cancelBtn) cancelBtn.classList.add('d-none');
+                                                    })
+                                                    .catch(err => {
+                                                        console.error('Regenerate error:', err);
+                                                        modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the analysis.</p>`;
+                                                    });
+                                            };
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error('Chart analysis error:', err);
+                                        modalContent.innerHTML = `<p class="text-danger">An error occurred during AI analysis.</p>`;
+                                    });
                             });
 
                             const fullAnalysisBtn = document.createElement('button');
