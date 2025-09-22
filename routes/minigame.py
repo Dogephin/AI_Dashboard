@@ -94,3 +94,13 @@ def api_minigame_ai_summary(game_id):
         cache.set(key, analysis_text)
 
     return jsonify({"analysis": analysis_text})
+
+@minigame_bp.route("/api/minigames/ratios")
+def minigames_ratios():
+    rows = mg.get_failure_success_ratios_all()
+    zero_success = [r for r in rows if (r.get("completed", 0) == 0 and r.get("failed", 0) > 0)]
+    if zero_success:
+        worst = max(zero_success, key=lambda r: r["failed"])
+    else:
+        worst = max(rows, key=lambda r: (r.get("failure_success_ratio") or -1))
+    return jsonify({"rows": rows, "worst": worst})

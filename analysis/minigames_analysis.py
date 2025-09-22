@@ -236,6 +236,47 @@ def ai_summary_for_minigame(game_name: str, summary_stats: dict, errors: dict, c
             ],
         )
         return cleanup_llm_response(response.choices[0].message.content)
+    
+def get_failure_success_ratios_all():
+    """
+    Per-level Completed/Failed counts with proper joins; also returns unique_users.
+    """
+    sql = text("""
+        SELECT
+            gl.Level_ID,
+            gl.Game_ID,
+            REPLACE(gl.Name, '<br>', ' - ') AS Name,
+
+            -- counts
+            COALESCE(SUM(CASE WHEN s.Status = 'complete' THEN 1 END), 0) AS completed,
+            COALESCE(SUM(CASE WHEN s.Status = 'fail'     THEN 1 END), 0) AS failed,
+
+            -- unique users
+            COALESCE(COUNT(DISTINCT CASE WHEN s.Session_ID IS NOT NULL THEN ps.User_ID END), 0)
+              AS unique_users
+
+        FROM IMA_Game_Level AS gl
+        LEFT JOIN IMA_Plan_Game AS pg
+               ON pg.Level   = gl.Level_ID
+              AND pg.Game_ID = gl.Game_ID
+        LEFT JOIN IMA_Plan_Session_Game_Status AS s
+               ON s.Plan_Game_ID = pg.Plan_Game_ID
+        LEFT JOIN IMA_Plan_Session AS ps
+               ON ps.Session_ID = s.Session_ID
+
+        GROUP BY gl.Level_ID, gl.Game_ID, gl.Name
+        ORDER BY gl.Game_ID, gl.Level_ID;
+    """)
+    with engine.connect() as conn:
+        rows = [dict(r._mapping) for r in conn.execute(sql).fetchall()]
+
+    for r in rows:
+        c = r.get("completed", 0) or 0
+        f = r.get("failed", 0) or 0
+        r["failure_success_ratio"] = (f / c) if c > 0 else None
+        r["failure_success_str"] = f"{f}:{c}"
+    return rows
+
 
 
 # Helper similar to response_cleanup in user_analysis.py

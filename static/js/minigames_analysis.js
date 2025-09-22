@@ -328,4 +328,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
+    // === Ratios Table ===
+    const ratiosTable = document.getElementById('ratiosTable');
+    const refreshRatiosBtn = document.getElementById('refreshRatiosBtn');
+
+    function fmtRatio(r) {
+        if (r == null) return '—';
+        return (Math.round(r * 100) / 100).toFixed(2);
+    }
+
+    function renderRatiosTable(data) {
+        if (!ratiosTable) return;
+        const tbody = ratiosTable.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        const worstKey = (row) => `${row.Level_ID}:${row.Game_ID}`;
+        const worstId = worstKey(data.worst);
+
+        data.rows.forEach(row => {
+        const tr = document.createElement('tr');
+        if (worstKey(row) === worstId) tr.classList.add('table-danger');
+        tr.innerHTML = `
+            <td>${row.Name}</td>
+            <td class="text-end">${row.completed}</td>
+            <td class="text-end">${row.failed}</td>
+            <td class="text-end">${row.failure_success_str}</td>
+            <td class="text-end">${fmtRatio(row.failure_success_ratio)}</td>
+        `;
+        tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('button[data-level]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const gameId = btn.getAttribute('data-level');
+            fetch(`/api/minigames/${gameId}/ai-summary`)
+            .then(r => r.json())
+            .then(({ analysis }) => {
+                const html = analysis
+                ? `<div id="aiModalBody">${analysis}</div>`
+                : '<div class="alert alert-secondary">No analysis available.</div>';
+                showStatsModal(html);
+            })
+            .catch(() => showStatsModal('<div class="alert alert-danger">Failed to get AI suggestions.</div>'));
+        });
+        });
+    }
+
+    function loadRatios() {
+        fetch('/api/minigames/ratios')
+        .then(r => r.json())
+        .then(data => renderRatiosTable(data))
+        .catch(err => {
+            console.error(err);
+            if (ratiosTable) {
+            ratiosTable.querySelector('tbody').innerHTML =
+                '<tr><td colspan="6"><div class="alert alert-danger mb-0">Failed to load ratios.</div></td></tr>';
+            }
+        });
+    }
+
+    if (refreshRatiosBtn) refreshRatiosBtn.addEventListener('click', loadRatios);
+    loadRatios();
 });
