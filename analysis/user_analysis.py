@@ -82,9 +82,8 @@ def get_list_of_games():
         return []
 
 
-def get_user_game_results(user_id, game_id):
-    query = text(
-        """
+def get_user_game_results(user_id, game_id, date_start=None, date_end=None):
+    query = """
         WITH combined AS (
             SELECT
                 ps.User_ID, psgs.Game_Start, psgs.Game_End, psgs.Status, 
@@ -123,13 +122,21 @@ def get_user_game_results(user_id, game_id):
         JSON_LENGTH(Overall_Results->'$.errors.minor')       AS "Minor Errors",
         JSON_LENGTH(Overall_Results->'$.errors.severe')      AS "Severe Errors"
         FROM combined
-        WHERE User_ID = :user_id and GameLevel = :game_id;
+        WHERE User_ID = :user_id and GameLevel = :game_id
     """
-    )
+
+    params = {"user_id": user_id, "game_id": game_id}
+
+    if date_start and date_end:
+        query += " AND Game_Start BETWEEN :date_start AND :date_end"
+        params["date_start"] = date_start + " 00:00:00"
+        params["date_end"] = date_end + " 23:59:59"
+
+    query = text(query)
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(query, {"user_id": user_id, "game_id": game_id})
+            result = conn.execute(query, params)
             rows = result.fetchall()
 
         results = [dict(row._mapping) for row in rows]
@@ -240,15 +247,17 @@ def analyze_results(results, analysis_type="single_game"):
     ]
 
     for i, r in enumerate(results):
-    # Collect error counts per attempt
+        # Collect error counts per attempt
         attempt_label = f"Attempt {i+1}"
-        error_trend.append({
-            "Attempt": attempt_label,
-            "Imprecisions": r.get("Imprecisions", 0),
-            "Warnings": r.get("Warnings", 0),
-            "Minor": r.get("Minor Errors", 0),
-            "Severe": r.get("Severe Errors", 0)
-        })
+        error_trend.append(
+            {
+                "Attempt": attempt_label,
+                "Imprecisions": r.get("Imprecisions", 0),
+                "Warnings": r.get("Warnings", 0),
+                "Minor": r.get("Minor Errors", 0),
+                "Severe": r.get("Severe Errors", 0),
+            }
+        )
 
     return {
         "attempts": len(results),
@@ -361,7 +370,7 @@ def analyze_single_attempt(results, client):
     8. Provide a overall conclusion about the user's performance in this attempt.
 
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
-    No overall title is needed, just start with the main paragraphs and its headings.
+    No overall title is needed, just start with the main paragraphs and its headings. The headings should be third-level headings (###).
 
     Your response must be in English language.
 
@@ -430,7 +439,7 @@ def analyze_multiple_attempts(results, client):
     7. End with a summary of the user's overall progress and training readiness.
 
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
-    No overall title is needed, just start with the main paragraphs and its headings.
+    No overall title is needed, just start with the main paragraphs and its headings. The headings should be third-level headings (###).
 
     JSON Data:
     {json.dumps(summarized_attempts, indent=2)}
@@ -590,7 +599,8 @@ def categorize_mistakes(errors, client):
 
     return final_output
 
-def generate_error_trend_prompt(user_id, game_id, errors, scores , client):
+
+def generate_error_trend_prompt(user_id, game_id, errors, scores, client):
     """
     Generate  AI prompt based on error trends and scores.
     """

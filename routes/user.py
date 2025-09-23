@@ -3,6 +3,7 @@ from analysis import user_analysis as ua
 from utils.context import get_llm_client
 from utils.cache import cache, generate_cache_key
 from utils.auth import login_required
+from datetime import date, datetime
 
 user_bp = Blueprint("user", __name__, template_folder="templates")
 
@@ -24,6 +25,22 @@ def user():
             # Handle main form
             user_id = payload.get("user_id")
             game_id = payload.get("game_id")
+            date_start = payload.get("date_start")
+            date_end = payload.get("date_end")
+
+            today = datetime.today().date()
+
+            if date_start and datetime.fromisoformat(date_start).date() > today:
+                return {
+                    "status": "error",
+                    "message": "Start date cannot be in the future.",
+                }
+
+            if date_end and datetime.fromisoformat(date_end).date() > today:
+                return {
+                    "status": "error",
+                    "message": "End date cannot be in the future.",
+                }
 
             # Check if user_id is not empty, but game_id is empty
             if user_id and (not game_id or str(game_id).strip() == ""):
@@ -58,7 +75,9 @@ def user():
                         }
                     )
             else:
-                results = ua.get_user_game_results(user_id, game_id)
+                results = ua.get_user_game_results(
+                    user_id, game_id, date_start, date_end
+                )
 
                 if not results:
                     return jsonify(
@@ -152,6 +171,7 @@ def user():
         games=games,
     )
 
+
 @user_bp.route("/analyze_chart", methods=["POST"])
 @login_required
 def generate_chart_prompt():
@@ -166,9 +186,12 @@ def generate_chart_prompt():
     scores = data.get("scores", [])
 
     # Delegate prompt generation to another function
-    ai_prompt = ua.generate_error_trend_prompt(user_id, game_id, errors, scores , get_llm_client())
+    ai_prompt = ua.generate_error_trend_prompt(
+        user_id, game_id, errors, scores, get_llm_client()
+    )
 
     return jsonify({"ai_prompt": ai_prompt})
+
 
 @user_bp.route("/generate-ai-prompt", methods=["POST"])
 @login_required
