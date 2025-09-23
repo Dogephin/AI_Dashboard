@@ -3,9 +3,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSelect = document.getElementById('user-select');
     const gameSelect = document.getElementById('game-select');
 
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const startInput = document.getElementById("date-start");
+    const endInput = document.getElementById("date-end");
+
+    startInput.setAttribute("max", today);
+    endInput.setAttribute("max", today);
+
+    // Ensure date range is valid
+    startInput.addEventListener("change", () => {
+        if (endInput.value && startInput.value > endInput.value) {
+            endInput.value = startInput.value;
+        }
+        endInput.min = startInput.value;
+    });
+
+    endInput.addEventListener("change", () => {
+        if (startInput.value && endInput.value < startInput.value) {
+            startInput.value = endInput.value;
+        }
+        startInput.max = endInput.value;
+    });
+
     let rowDataArray = [];
 
-    
+
     // Sorting function for tables
     function sortTable(header, columnIndex, dataType) {
         const table = header.closest('table');
@@ -72,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const userId = userSelect.value;
         const gameId = gameSelect.value;
+        const dateStart = document.getElementById('date-start').value;
+        const dateEnd = document.getElementById('date-end').value;
 
         const userName = userSelect.options[userSelect.selectedIndex].textContent.trim();
         const gameName = gameSelect.options[gameSelect.selectedIndex].textContent.trim();
@@ -81,7 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ user_id: userId, game_id: gameId })
+            body: JSON.stringify({
+                user_id: userId,
+                game_id: gameId,
+                date_start: dateStart,
+                date_end: dateEnd
+            })
         })
             .then(response => response.json())
             .then(data => {
@@ -271,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 }
                             });
-                            
 
                             // Detailed table for overall assessment
                             const table = document.createElement('table');
@@ -595,10 +623,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 plugins: [ChartDataLabels]
                             });
 
-                                const aiButton = document.createElement('button');
-                                aiButton.textContent = 'AI Analysis';
-                                aiButton.className = 'btn btn-primary mt-3'; // style with Bootstrap/Tailwind or your CSS
-                                errorCard.appendChild(aiButton);
+                            const aiButton = document.createElement('button');
+                            aiButton.textContent = 'AI Analysis';
+                            aiButton.className = 'btn btn-primary mt-3'; // style with Bootstrap/Tailwind or your CSS
+                            errorCard.appendChild(aiButton);
 
                             aiButton.addEventListener('click', () => {
                                 const downloadBtn = document.getElementById('btn-download-analysis');
