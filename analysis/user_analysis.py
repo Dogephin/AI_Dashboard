@@ -370,7 +370,7 @@ def analyze_single_attempt(results, client):
     8. Provide a overall conclusion about the user's performance in this attempt.
 
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
-    No overall title is needed, just start with the main paragraphs and its headings.
+    No overall title is needed, just start with the main paragraphs and its headings. The headings should be third-level headings (###).
 
     Your response must be in English language.
 
@@ -439,7 +439,7 @@ def analyze_multiple_attempts(results, client):
     7. End with a summary of the user's overall progress and training readiness.
 
     Respond in a structured paragraph format and avoid referencing specific IDs (e.g., level\_id, seq\_id). Use human-friendly language. 
-    No overall title is needed, just start with the main paragraphs and its headings.
+    No overall title is needed, just start with the main paragraphs and its headings. The headings should be third-level headings (###).
 
     JSON Data:
     {json.dumps(summarized_attempts, indent=2)}
