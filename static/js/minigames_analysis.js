@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = 'game-card';
         card.innerHTML = `
             <h2 class="text-lg font-semibold mb-1" style="color: #000;">${game.Name}</h2>
-            <p class="text-sm text-gray-600 mb-2">Game ID ${game.Game_ID} | Level ${game.Level_ID}</p>
+            <p class="text-sm text-gray-600 mb-2">Game ID ${game.Game_ID}</p>
             <button class="btn btn-primary btn-sm" data-game-id="${game.Level_ID}">View Stats</button>
             <div class="details mt-3" id="details-${game.Level_ID}" style="display:none;"></div>
             <button class="btn btn-outline-secondary btn-sm ai-summary-btn" data-game-id="${game.Level_ID}">
@@ -328,65 +328,127 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-    // === Ratios Table ===
-    const ratiosTable = document.getElementById('ratiosTable');
-    const refreshRatiosBtn = document.getElementById('refreshRatiosBtn');
 
-    function fmtRatio(r) {
-        if (r == null) return '—';
-        return (Math.round(r * 100) / 100).toFixed(2);
-    }
+    // === Combined Stats Table (with Practice/Training filter) ===
+    const combinedTable = document.getElementById('combinedTable');
+    const refreshCombinedBtn = document.getElementById('refreshCombinedBtn');
+    const combinedModeSelect = document.getElementById('combinedModeSelect');
 
-    function renderRatiosTable(data) {
-        if (!ratiosTable) return;
-        const tbody = ratiosTable.querySelector('tbody');
+    function fmt(val, dp=2) {
+  if (val === null || val === undefined) return '—';
+  return Number(val).toFixed(dp);
+}
+
+function wireAiExplainButtonsWithinTable(tbody) {
+  tbody.querySelectorAll('button[data-level]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const gameId = btn.getAttribute('data-level');
+
+      const modalContent = document.getElementById('aiModalBody');
+      const cancelBtn = document.getElementById('btn-cancel-analysis');
+      const downloadBtn = document.getElementById('btn-download-analysis');
+      const regenerateBtn = document.getElementById('btn-regenerate-analysis');
+
+      // keep summary UI untouched; just reuse the modal shell
+      if (cancelBtn) cancelBtn.classList.add('d-none');
+      if (downloadBtn) downloadBtn.classList.add('d-none');
+      if (regenerateBtn) regenerateBtn.classList.add('d-none');
+
+      showAiModal('<em>Generating explanation…</em>');
+
+      fetchAiExplain(gameId)
+        .then(({ analysis }) => {
+          const result = analysis || 'No explanation available.';
+          const html = (typeof marked !== 'undefined') ? marked.parse(result) : result;
+          modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+
+          // allow download of the explanation
+          if (downloadBtn && result.trim()) {
+            downloadBtn.classList.remove('d-none');
+            downloadBtn.onclick = () => {
+              const blob = new Blob([result], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `[Minigame ${gameId}] - AI_EXPLAIN.txt`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            };
+          }
+        })
+        .catch(() => {
+          modalContent.innerHTML = '<div class="text-danger">Failed to get AI explanation.</div>';
+        });
+    });
+  });
+}
+
+
+    function renderCombinedTable(data) {
+        if (!combinedTable) return;
+        const tbody = combinedTable.querySelector('tbody');
         tbody.innerHTML = '';
 
-        const worstKey = (row) => `${row.Level_ID}:${row.Game_ID}`;
-        const worstId = worstKey(data.worst);
+        const worstKey = data.worst_ratio ? `${data.worst_ratio.Level_ID}:${data.worst_ratio.Game_ID}:${data.worst_ratio.Mode}` : null;
+        const toughKey = data.toughest ? `${data.toughest.Level_ID}:${data.toughest.Game_ID}:${data.toughest.Mode}` : null;
 
         data.rows.forEach(row => {
-        const tr = document.createElement('tr');
-        if (worstKey(row) === worstId) tr.classList.add('table-danger');
-        tr.innerHTML = `
+            const tr = document.createElement('tr');
+            const key = `${row.Level_ID}:${row.Game_ID}:${row.Mode || ''}`;
+
+            if (key === worstKey || key === toughKey) tr.classList.add('table-danger');
+
+            tr.innerHTML = `
             <td>${row.Name}</td>
+            <td>${row.Mode || '—'}</td>
             <td class="text-end">${row.completed}</td>
             <td class="text-end">${row.failed}</td>
+            <td class="text-end">${row.userexit}</td>
             <td class="text-end">${row.failure_success_str}</td>
-            <td class="text-end">${fmtRatio(row.failure_success_ratio)}</td>
-        `;
-        tbody.appendChild(tr);
+            <td class="text-end">${fmt(row.failure_success_ratio)}</td>
+            <td class="text-end">${fmt(row.avg_attempts_before_success)}</td>
+            <td class="text-end">${row.users_considered}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-danger" data-level="${row.Level_ID}">AI Explain</button>
+            </td>
+            `;
+            tbody.appendChild(tr);
         });
 
-        tbody.querySelectorAll('button[data-level]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const gameId = btn.getAttribute('data-level');
-            fetch(`/api/minigames/${gameId}/ai-summary`)
-            .then(r => r.json())
-            .then(({ analysis }) => {
-                const html = analysis
-                ? `<div id="aiModalBody">${analysis}</div>`
-                : '<div class="alert alert-secondary">No analysis available.</div>';
-                showStatsModal(html);
-            })
-            .catch(() => showStatsModal('<div class="alert alert-danger">Failed to get AI suggestions.</div>'));
-        });
-        });
+        // 🔗 attach click handlers for the newly-rendered buttons
+        wireAiExplainButtonsWithinTable(tbody);
+        }
+
+
+        function currentMode() {
+        const sel = document.getElementById('combinedModeSelect');
+        return (sel && sel.value) ? sel.value : 'all';
+        }
+
+        function fetchAiExplain(gameId) {
+        return fetch(`/api/minigames/${gameId}/ai-explain?mode=${encodeURIComponent(currentMode())}`)
+            .then(r => r.json());
     }
 
-    function loadRatios() {
-        fetch('/api/minigames/ratios')
+
+    function loadCombined() {
+    const mode = currentMode();
+    fetch(`/api/minigames/combined-stats?mode=${encodeURIComponent(mode)}`)
         .then(r => r.json())
-        .then(data => renderRatiosTable(data))
+        .then(data => renderCombinedTable(data))
         .catch(err => {
-            console.error(err);
-            if (ratiosTable) {
-            ratiosTable.querySelector('tbody').innerHTML =
-                '<tr><td colspan="6"><div class="alert alert-danger mb-0">Failed to load ratios.</div></td></tr>';
-            }
+        console.error(err);
+        if (combinedTable) {
+            combinedTable.querySelector('tbody').innerHTML =
+            '<tr><td colspan="9"><div class="alert alert-danger mb-0">Failed to load combined stats.</div></td></tr>';
+        }
         });
     }
 
-    if (refreshRatiosBtn) refreshRatiosBtn.addEventListener('click', loadRatios);
-    loadRatios();
+    if (refreshCombinedBtn) refreshCombinedBtn.addEventListener('click', loadCombined);
+    if (combinedModeSelect) combinedModeSelect.addEventListener('change', loadCombined);
+    loadCombined();
+
 });

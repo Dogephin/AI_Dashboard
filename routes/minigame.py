@@ -52,6 +52,19 @@ def api_minigame_stats(game_id):
         }
     )
 
+@minigame_bp.route("/api/minigames/<int:game_id>/ai-explain")
+def api_minigame_ai_explain_from_attempts(game_id):
+    mode = (request.args.get("mode") or "all").lower()
+    data = mg.build_ai_explain_payload_from_attempts(level_id=game_id, mode=mode)
+
+    text = mg.ai_explain_for_minigame(
+        data.get("name") or f"Level {game_id}",
+        data,
+        get_llm_client()
+    )
+    return jsonify({"analysis": text, "data": data, "mode": mode})
+
+
 
 @minigame_bp.route("/api/minigames/<int:game_id>/ai-summary")
 @login_required
@@ -95,12 +108,18 @@ def api_minigame_ai_summary(game_id):
 
     return jsonify({"analysis": analysis_text})
 
-@minigame_bp.route("/api/minigames/ratios")
-def minigames_ratios():
-    rows = mg.get_failure_success_ratios_all()
-    zero_success = [r for r in rows if (r.get("completed", 0) == 0 and r.get("failed", 0) > 0)]
-    if zero_success:
-        worst = max(zero_success, key=lambda r: r["failed"])
-    else:
-        worst = max(rows, key=lambda r: (r.get("failure_success_ratio") or -1))
-    return jsonify({"rows": rows, "worst": worst})
+@minigame_bp.route("/api/minigames/combined-stats")
+def minigames_combined_stats():
+    mode = (request.args.get("mode") or "all").lower()  # 'all' | 'practice' | 'training'
+    rows = mg.get_combined_game_stats(mode=mode)
+
+    worst_ratio = None
+    toughest = None
+    if rows:
+        cr = [r for r in rows if r["failure_success_ratio"] is not None]
+        if cr: worst_ratio = max(cr, key=lambda r: r["failure_success_ratio"])
+        ca = [r for r in rows if r["avg_attempts_before_success"] is not None]
+        if ca: toughest = max(ca, key=lambda r: r["avg_attempts_before_success"])
+
+    return jsonify({"rows": rows, "worst_ratio": worst_ratio, "toughest": toughest, "mode": mode})
+
