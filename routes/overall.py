@@ -188,6 +188,43 @@ def api_student_game_results_analysis():
     
     return jsonify(top_bottom_rows_analysis_response)
 
+@overall_bp.route("/api/analysis/personalised-feedback/<username>")
+@login_required
+def api_personalised_feedback(username):
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+
+    results = oa.get_student_game_results(start_month=start_month, end_month=end_month)
+
+    if not results:
+        return jsonify({"text": "No student game results found."})
+
+    # Combine rows so we can find this student
+    all_rows = results.get("top_rows", []) + results.get("bottom_rows", [])
+    student_row = next((r for r in all_rows if r["username"] == username), None)
+
+    if not student_row:
+        return jsonify({"text": f"No data found for student '{username}'."})
+
+    key = generate_cache_key("personalised-feedback", {"username": username, "data": student_row})
+
+    force_refresh = request.args.get("force_refresh", "false").lower() == "true"
+    personalised_feedback_response = None if force_refresh else cache.get(key)
+
+    if not personalised_feedback_response:
+        personalised_feedback_response = oa.personalised_feedback_analysis(
+            student_row, get_llm_client()
+        )
+        cache.set(key, personalised_feedback_response)
+
+    print(f"Test Response for Personalised{personalised_feedback_response}", flush=True)
+    
+    return jsonify(personalised_feedback_response)
+    # return jsonify({
+    #     "username": username,
+    #     "feedback": personalised_feedback_response
+    # })
+
 @overall_bp.route("/overall")
 @login_required
 def overall():

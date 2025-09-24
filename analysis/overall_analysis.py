@@ -856,8 +856,21 @@ def get_student_game_results(start_month=None, end_month=None):
         except Exception:
             continue
 
-    avg_scores = {u: sum(s)/len(s) for u, s in performance.items() if s}
-    sorted_students = sorted(avg_scores.items(), key=lambda x: x[1], reverse=True)
+    # Weighted average calculation
+    all_scores = [score for scores in performance.values() for score in scores]
+    global_avg = sum(all_scores) / len(all_scores) if all_scores else 0
+    k = 3  # Confidence weight in a single game's information of being accurate
+
+    weighted_scores = {}
+    for u, scores in performance.items():
+        n = len(scores)
+        if n > 0:
+            # Use Bayesian Average which balances two competing feature
+            # Formula: WeightedAvg = [sum(scores) + k * global average score across all students] / no. of games the student played + k
+            weighted_avg = (sum(scores) + global_avg * k) / (n + k)
+            weighted_scores[u] = weighted_avg
+
+    sorted_students = sorted(weighted_scores.items(), key=lambda x: x[1], reverse=True)
 
     top_usernames = {u for u, _ in sorted_students[:3]}
     bottom_usernames = {u for u, _ in sorted_students[-3:]}
@@ -889,6 +902,7 @@ def get_student_game_results(start_month=None, end_month=None):
         "top_rows": top_rows,
         "bottom_rows": bottom_rows
     }
+
 
 def top_vs_bottom_analysis(student_data, client):
     """
@@ -924,7 +938,7 @@ def top_vs_bottom_analysis(student_data, client):
     I have aggregated data on student performance from training sessions. Focus specifically on the top performers and bottom performers. 
     Top and bottom summaries contain usernames and average scores. Detailed rows contain completion_rate, games_played, status, accuracy, and total_time for each game.
 
-    Return exactly these sections as second-level headings (##). Use short paragraphs, no bullet points, and avoid introducing the analysis before the first heading.
+    Return exactly these sections as second-level headings (##). Use short paragraphs, no bullet points, and avoid introducing the analysis before the first heading. Only use normal sentences in short paragraphs.
 
     ## Performance Overview
     Compare the top performers versus the bottom performers. Highlight key differences in scores, completion rates, and consistency.
@@ -938,7 +952,7 @@ def top_vs_bottom_analysis(student_data, client):
     ## Actionable Recommendations
     Suggest targeted interventions or strategies to help lower performers improve and to maintain or further enhance top performers’ results.
 
-    Data to analyze:
+    Data to analyze (JSON):
     {json_data}
     """
 
@@ -956,6 +970,42 @@ def top_vs_bottom_analysis(student_data, client):
         insights_text = response.choices[0].message.content
 
     return clear_formatting(insights_text)
+
+def personalised_feedback_analysis(student_row, client):    
+    prompt = f"""
+    You are an expert training analyst.
+
+    Analyze the following student's performance data which contains usernames and average scores. Detailed rows contain completion_rate, games_played, status, accuracy, and total_time for each gameand provide feedback.
+
+    Data:
+    {json.dumps(student_row, indent=2)}
+
+    Return exactly these sections as second-level headings (##). Use short paragraphs, no bullet points, and avoid introducing the analysis before the first heading.
+
+    ## Personalized Recommendation
+    Write short, practical guidance on how this student can improve.
+
+    ## Motivational Strategies
+    Suggest encouragement or adaptive support strategies for this student.
+
+    ## Actions Teacher's Can Take
+    Suggest motivational strategies that can help support this student.
+    """
+
+    # Send prompt to AI
+    if callable(client):
+        feedback = client(prompt)
+    else:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a supportive student coach."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        feedback = response.choices[0].message.content
+
+    return clear_formatting(feedback)
 
     
 def parse_month_range(start_month, end_month):
@@ -1002,6 +1052,7 @@ def parse_llm_insights(response_text):
 
     # If no numbered points, try headings (##)
     heading_pattern = r"##\s*(.+?)(?=\n##|\Z)"
+    
     matches = re.findall(heading_pattern, response_text, flags=re.DOTALL)
     if matches:
         for section in matches:

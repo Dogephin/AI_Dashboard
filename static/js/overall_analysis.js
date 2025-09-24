@@ -5,6 +5,14 @@ document.addEventListener('DOMContentLoaded', async() => {
     document.querySelectorAll('.analyze-btn').forEach(button => {
         button.addEventListener('click', () => generateAnalysis(button));
     });
+    
+    document.getElementById("student-stats-table").addEventListener("click", (event) => {
+        const button = event.target.closest(".analyze-btn");
+        if (button) {
+            generateAnalysis(button);
+        }
+    });
+
 
     // Pre-fill month inputs from URL
     const params = new URLSearchParams(window.location.search);
@@ -42,6 +50,9 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     } else {
         console.log("[DEBUG] Apply Filter button NOT found!");
+    }
+    if (window.topBottomDataFromFlask) {
+        renderStudentStatsTable(window.topBottomDataFromFlask);
     }
 });
 
@@ -109,8 +120,13 @@ function generateAnalysis(button, forceRefresh = false) {
         params.set("force_refresh", "true");
     }
 
-    let url = `/api/analysis/${type}?${params.toString()}`;
-
+    let url;
+    if (type === "personalised-feedback") {
+        const username = button.getAttribute("data-username");
+        url = `/api/analysis/personalised-feedback/${username}?${params.toString()}`;
+    } else {
+        url = `/api/analysis/${type}?${params.toString()}`;
+    }
 
     // Fetch analysis
     fetch(url)
@@ -228,20 +244,32 @@ function renderStudentStatsTable(topBottomDataFromFlask) {
         const tr = document.createElement("tr");
         tr.style.backgroundColor = row.isTop ? "#56a76aff" : row.isBottom ? "#a85158ff" : "#ffffff";
 
+        // Add button only for bottom students, dash for top students
+        let feedbackCell;
+        if (row.isBottom) {
+            feedbackCell = `
+                <button class="btn analyze-btn" data-type="personalised-feedback" data-username="${row.username}" title="Analyze this row">
+                    <svg height="24" width="24" fill="#FFFFFF" viewBox="0 0 24 24" class="sparkle">
+                        <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z"></path>
+                    </svg>
+                    <span class="text">Generate</span>
+                </button>
+            `;
+        } else if (row.isTop) {
+            feedbackCell = "-";
+        } else {
+            feedbackCell = "";
+        }
+
         tr.innerHTML = `
             <td style="padding:8px; border:1px solid #ccc; color: black;">${index + 1}</td>
             <td style="padding:8px; border:1px solid #ccc; color: black;">${row.username}</td>
             <td style="padding:8px; border:1px solid #ccc; color: black;">${avgScoreMap[row.username]?.toFixed(2) || 0}</td>
             <td style="padding:8px; border:1px solid #ccc; color: black;">${row.completionRate?.toFixed(2) || 0}</td>
             <td style="padding:8px; border:1px solid #ccc; color: black;">${row.gamesPlayed || 0}</td>
+            <td style="padding:8px; border:1px solid #ccc; color: black; text-align:center;">${feedbackCell}</td>
         `;
         tableBody.appendChild(tr);
     });
-}
 
-// Example call inside DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.topBottomDataFromFlask) {
-        renderStudentStatsTable(window.topBottomDataFromFlask);
-    }
-});
+}
