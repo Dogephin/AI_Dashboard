@@ -866,7 +866,8 @@ def get_student_game_results(start_month=None, end_month=None):
         n = len(scores)
         if n > 0:
             # Use Bayesian Average which balances two competing feature
-            # Formula: WeightedAvg = [sum(scores) + k * global average score across all students] / no. of games the student played + k
+            # Formula for Bayesian Average
+            # WeightedAvg = [sum(scores) + k * global average score across all students] / no. of games the student played + k
             weighted_avg = (sum(scores) + global_avg * k) / (n + k)
             weighted_scores[u] = weighted_avg
 
