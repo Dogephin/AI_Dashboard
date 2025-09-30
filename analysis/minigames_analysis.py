@@ -20,6 +20,7 @@ Usage pattern (example):
     common   = top_errors(errors["minor"], top_n=5)
 """
 
+from decimal import Decimal
 import json
 import logging
 import re
@@ -180,6 +181,81 @@ def get_minigame_attempts_by_mode(game_id: int, mode: str = "all"):
     except Exception as exc:
         logger.error("Failed to fetch attempts for game %s (mode=%s): %s", game_id, mode, exc)
         return []
+
+def get_minigame_warning_trend(game_id: int):
+    """
+    Get number of warnings triggered last month vs this month for a given minigame
+    across all users, along with the percentage change.
+
+    Returns a dict:
+        {
+            "ThisMonthWarnings": 12,
+            "LastMonthWarnings": 18,
+            "PercentChange": -33.33
+        }
+    """
+    query = text("""
+        SELECT
+            SUM(CASE
+                    WHEN MONTH(psgs.Game_End) = MONTH(CURDATE()) 
+                     AND YEAR(psgs.Game_End) = YEAR(CURDATE())
+                        THEN JSON_LENGTH(JSON_EXTRACT(psgs.Results, '$.errors.warning'))
+                    ELSE 0
+                END) AS ThisMonthWarnings,
+            SUM(CASE
+                    WHEN MONTH(psgs.Game_End) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                     AND YEAR(psgs.Game_End) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                        THEN JSON_LENGTH(JSON_EXTRACT(psgs.Results, '$.errors.warning'))
+                    ELSE 0
+                END) AS LastMonthWarnings,
+            ROUND(
+                (
+                    SUM(CASE
+                            WHEN MONTH(psgs.Game_End) = MONTH(CURDATE()) 
+                             AND YEAR(psgs.Game_End) = YEAR(CURDATE())
+                                THEN JSON_LENGTH(JSON_EXTRACT(psgs.Results, '$.errors.warning'))
+                            ELSE 0
+                        END)
+                    -
+                    SUM(CASE
+                            WHEN MONTH(psgs.Game_End) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                             AND YEAR(psgs.Game_End) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                                THEN JSON_LENGTH(JSON_EXTRACT(psgs.Results, '$.errors.warning'))
+                            ELSE 0
+                        END)
+                ) / NULLIF(
+                    SUM(CASE
+                            WHEN MONTH(psgs.Game_End) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                             AND YEAR(psgs.Game_End) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                                THEN JSON_LENGTH(JSON_EXTRACT(psgs.Results, '$.errors.warning'))
+                            ELSE 0
+                        END), 0
+                ) * 100, 2
+            ) AS PercentChange
+        FROM IMA_Plan_Game AS pg
+        JOIN IMA_Plan_Session_Game_Status AS psgs
+          ON pg.Plan_Game_ID = psgs.Plan_Game_ID
+        JOIN IMA_Plan_Session AS ps
+          ON ps.Session_ID = psgs.Session_ID
+        WHERE pg.Level = :game_id;
+    """)
+
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(query, {"game_id": game_id}).fetchone()
+
+        if row:
+            result = dict(row._mapping)
+            logger.info("Fetched monthly warning trend for game %s: %s", game_id, result)
+            return result
+        else:
+            logger.warning("No warning data found for game %s", game_id)
+            return {"ThisMonthWarnings": 0, "LastMonthWarnings": 0, "PercentChange": None}
+    except Exception as exc:
+        logger.error("Failed to fetch monthly warning trend for game %s: %s", game_id, exc)
+        return {"ThisMonthWarnings": 0, "LastMonthWarnings": 0, "PercentChange": None}
+
+
 
 
 
@@ -722,3 +798,53 @@ MODE_EXPR = (
     "   OR COALESCE(LOWER(s.Results),'')  LIKE '%training%' THEN 'training' "
     " ELSE 'unknown' END"
 )
+
+def fetch_warning_stats(game_id: int):
+    """
+    Wrapper around get_minigame_warning_trend that returns keys compatible
+    with the API response (monthly stats).
+    """
+    trend = get_minigame_warning_trend(game_id)
+
+    return {
+        "this_month_warnings": trend.get("ThisMonthWarnings", 0),
+        "last_month_warnings": trend.get("LastMonthWarnings", 0),
+        "percent_change": trend.get("PercentChange"),
+    }
+
+
+def ai_summary_for_warnings(game_name: str, warning_stats: dict, client):
+    """
+    Call an LLM to produce a natural-language summary of warning trends for a mini-game.
+    """
+    safe_stats = {k: float(v) if isinstance(v, Decimal) else v for k, v in warning_stats.items()}
+    prompt = f"""
+    You are an expert training analyst.
+
+    The mini-game **{game_name}** has the following monthly warning statistics:
+    Return exactly these sections as second-level headings (##). Use short paragraphs (no bullet symbols). Do not include any introduction before the first heading.
+
+    ## Warning Trends
+    Summarize this month vs last month warning counts, percentage change, and any notable trends.
+
+    ## Insights
+    Explain what these warnings indicate about student performance or common mistakes.
+
+    WARNING_STATS:
+    {json.dumps(safe_stats, indent=2)}    
+    """
+
+    if callable(client):
+        return cleanup_llm_response(client(prompt))
+    else:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a gameplay data analyst."},
+                {"role": "user", "content": prompt.strip()},
+            ],
+        )
+        return cleanup_llm_response(response.choices[0].message.content)
+
+
+

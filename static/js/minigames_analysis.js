@@ -203,33 +203,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function toggleDetails(gameId) {
-        fetch(`/api/minigames/${gameId}/stats`)
-            .then(r => r.json())
-            .then(data => {
-                const s = data.summary;
-                const topMinor = data.top_minor || [];
-                const topSevere = data.top_severe || [];
+function toggleDetails(gameId) {
+    fetch(`/api/minigames/${gameId}/stats`)
+        .then(r => r.json())
+        .then(data => {
+            const s = data.summary;
+            const topMinor = data.top_minor || [];
+            const topSevere = data.top_severe || [];
+            const ws = data.warning_stats || {};
 
-                const html = `
-                    <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
-                    <p><strong>Unique Users:</strong> ${s.unique_users}</p>
-                    <p><strong>Completed:</strong> ${s.completed}</p>
-                    <p><strong>Failed:</strong> ${s.failed}</p>
-                    <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
-                    <p><strong>Average Score:</strong> ${s.average_score}</p>
-                    <h5 class="mt-3">Top Minor Errors</h5>
-                    <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
-                    <h5 class="mt-3">Top Severe Errors</h5>
-                    <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
-                `;
-                showStatsModal(html);
-            })
-            .catch(err => {
-                console.error(err);
-                showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
+            const html = `
+                <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
+                <p><strong>Unique Users:</strong> ${s.unique_users}</p>
+                <p><strong>Completed:</strong> ${s.completed}</p>
+                <p><strong>Failed:</strong> ${s.failed}</p>
+                <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
+                <p><strong>Average Score:</strong> ${s.average_score}</p>
+
+                <h5 class="mt-3">Top Minor Errors</h5>
+                <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+
+                <h5 class="mt-3">Top Severe Errors</h5>
+                <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+
+                <h5 class="mt-3">Warnings (Monthly)</h5>
+                <p><strong>This Month:</strong> ${ws.this_month_warnings || 0}</p>
+                <p><strong>Last Month:</strong> ${ws.last_month_warnings || 0}</p>
+                <p><strong>% Change:</strong> ${ws.percent_change !== null ? ws.percent_change + '%' : 'N/A'}</p>
+
+                <button id="btn-analyze-warnings" class="btn btn-primary mt-3">Analyze Warnings</button>
+            `;
+
+            showStatsModal(html);
+
+            // Attach click handler AFTER modal is rendered
+            document.getElementById('btn-analyze-warnings').addEventListener('click', () => {
+                const aiModal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
+                const aiContent = document.getElementById('ai-warning-content');
+                aiContent.innerHTML = 'Generating AI summary...';
+                aiModal.show();
+
+                fetch(`/api/minigames/${gameId}/warnings/ai-summary`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.analysis) {
+                            aiContent.innerHTML = `<pre>${data.analysis}</pre>`;
+                        } else if (data.message) {
+                            aiContent.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
+                        } else {
+                            aiContent.innerHTML = '<div class="alert alert-danger">No data returned.</div>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        aiContent.innerHTML = '<div class="alert alert-danger">Failed to generate AI summary.</div>';
+                    });
             });
-    }
+        })
+        .catch(err => {
+            console.error(err);
+            showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
+        });
+}
+
 
     function attachAiButton(gameId) {
         const btn = document.querySelector(`button.ai-summary-btn[data-game-id="${gameId}"]`);
