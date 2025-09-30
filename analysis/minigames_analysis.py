@@ -24,6 +24,7 @@ from decimal import Decimal
 import json
 import logging
 import re
+import os
 from collections import Counter, defaultdict
 from statistics import mean
 
@@ -436,6 +437,55 @@ def _llm_complete_universal(client, prompt, *, model=None, system=None):
         if text: return text.strip()
     raise AttributeError("No compatible completion method found on LLM client")
 
+def ai_generic_markdown(prompt: str, client, *, model: str | None = None, system: str | None = None) -> str:
+    try:
+        # Prefer env, then passed model, then a sane fallback
+        chosen = model or os.getenv("LLM_MODEL") or "deepseek-chat"
+        sysmsg = system or "Respond in concise, actionable Markdown."
+        return _llm_complete_universal(client, prompt, model=chosen, system=sysmsg)
+    except Exception as e:
+        return f"(AI generation failed: {e})"
+
+
+
+def ai_prioritise_low_performing(games_ranked: list[dict], priority: list[dict], picked_by: str, client) -> str:
+    """
+    Build a short, actionable brief highlighting low-performing minigames.
+    - games_ranked: all games sorted ascending by completion_rate
+    - priority: the chosen subset (e.g., bottom 5 or < threshold)
+    - picked_by: human-readable selection rule to show in the brief header
+    """
+    prompt = f"""
+    You are the analytics assistant for a learning game platform.
+    Given minigames with completion rates (%), attempted/completed counts,
+    identify where support should be prioritised and what to do next.
+
+    Selection rule used: {picked_by}
+
+    Priority list (lowest completion first):
+    {[
+        {'id': r['Level_ID'], 'name': r['Name'], 'completion_%': r['completion_rate'],
+        'attempted': r['attempted'], 'completed': r['completed']}
+        for r in priority
+    ]}
+
+    All games (for context):
+    {[
+        {'id': r['Level_ID'], 'name': r['Name'], 'completion_%': r['completion_rate'],
+        'attempted': r['attempted'], 'completed': r['completed']}
+        for r in games_ranked
+    ]}
+
+    Write a concise, actionable markdown brief:
+    - Bullet a ranked priority list with reasons (e.g., low completion %, high attempts but low success).
+    - Suggest 2–3 targeted actions per game (UX tweaks, scaffolding hints, tutorial step, error messaging, difficulty curve).
+    - Add a short global “next 2 weeks” plan (A/B tests, instrumentation to add).
+    Keep it under 250 words.
+    """.strip()
+
+    return ai_generic_markdown(prompt, client, system="Respond in concise, actionable Markdown.")
+
+
 def ai_explain_minigame_from_attempts(level_name: str, payload: dict, llm_client):
     def line(r):
         return (f"- Mode: {r['mode']}\n"
@@ -813,6 +863,8 @@ def fetch_warning_stats(game_id: int):
     }
 
 
+
+
 def ai_summary_for_warnings(game_name: str, warning_stats: dict, client):
     """
     Call an LLM to produce a natural-language summary of warning trends for a mini-game.
@@ -845,6 +897,3 @@ def ai_summary_for_warnings(game_name: str, warning_stats: dict, client):
             ],
         )
         return cleanup_llm_response(response.choices[0].message.content)
-
-
-

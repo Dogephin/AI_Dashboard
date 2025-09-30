@@ -5,6 +5,9 @@
     {% include 'common/head.html' %}
     <title>Game Analysis Dashboard – Minigames</title>
     <script defer src="{{ url_for('static', filename='js/minigames_analysis.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/minigames_charts.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- Ion.RangeSlider CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ion-rangeslider/css/ion.rangeSlider.min.css" />
@@ -199,7 +202,6 @@
                     </select>
                     <button id="refreshCombinedBtn" class="btn btn-sm btn-outline-primary">Refresh</button>
                 </div>
-                <button id="refreshCombinedBtn" class="btn btn-sm btn-outline-primary">Refresh</button>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -222,6 +224,19 @@
                 </table>
                 </div>
             </div>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Minigame Completion Rates</h3>
+                <div>
+                    <button id="btn-refresh-completion" class="btn btn-outline-secondary btn-sm">Refresh</button>
+                    <button id="btn-ai-priority" class="btn btn-danger btn-sm">Where to prioritise support?</button>
+                </div>
+            </div>
+            
+            <div class="card-body" style="height:480px;">
+                <canvas id="completionChart"></canvas>
+            </div>
+
+
         </div>
     </div>
 

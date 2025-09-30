@@ -158,3 +158,120 @@ def minigames_combined_stats():
 
     return jsonify({"rows": rows, "worst_ratio": worst_ratio, "toughest": toughest, "mode": mode})
 
+@minigame_bp.route("/api/minigames/completion")
+@login_required
+def api_minigames_completion():
+    """Return per-minigame completion % with counts."""
+    games = mg.get_list_of_minigames()
+    out = []
+    for g in games:
+        gid = g["Level_ID"]
+        attempts = mg.get_minigame_attempts(gid)
+        if not attempts:
+            out.append({
+                "Level_ID": gid,
+                "Name": g["Name"],
+                "completed": 0,
+                "attempted": 0,
+                "completion_rate": 0.0
+            })
+            continue
+
+        summary = mg.analyse_minigame_attempts(attempts)  # you already have this
+        completed = summary.get("completed", 0)
+        attempted = summary.get("total_attempts", 0)
+        rate = float(summary.get("completion_rate", 0.0))  # already in %
+
+        out.append({
+            "Level_ID": gid,
+            "Name": g["Name"],
+            "completed": completed,
+            "attempted": attempted,
+            "completion_rate": rate
+        })
+    # sort by name for stable chart order
+    out.sort(key=lambda r: r["Name"].lower())
+    return jsonify({"rows": out})
+
+@minigame_bp.route("/api/minigames/completion/ai-priority")
+@login_required
+def api_minigames_ai_priority():
+    """
+    Ask the LLM to highlight low-performing minigames and concrete next steps.
+    Query params:
+      - threshold (float, %). If provided, treat games below it as priority.
+      - top_n (int). If provided, pick the N lowest completion-rate games.
+    """
+    try:
+        threshold = float(request.args.get("threshold")) if request.args.get("threshold") else None
+    except ValueError:
+        threshold = None
+    try:
+        top_n = int(request.args.get("top_n")) if request.args.get("top_n") else None
+    except ValueError:
+        top_n = None
+
+    # Reuse the completion API logic
+    games = []
+    for g in mg.get_list_of_minigames():
+        gid = g["Level_ID"]
+        attempts = mg.get_minigame_attempts(gid)
+        if not attempts:
+            games.append({"Level_ID": gid, "Name": g["Name"], "completion_rate": 0.0, "attempted": 0, "completed": 0})
+            continue
+        s = mg.analyse_minigame_attempts(attempts)
+        games.append({
+            "Level_ID": gid,
+            "Name": g["Name"],
+            "completion_rate": float(s.get("completion_rate", 0.0)),
+            "attempted": int(s.get("total_attempts", 0)),
+            "completed": int(s.get("completed", 0)),
+        })
+
+    # Select priority set
+    ranked = sorted(games, key=lambda r: r["completion_rate"])
+    if threshold is not None:
+        priority = [r for r in ranked if r["completion_rate"] < threshold]
+        picked_by = f"below {threshold:.1f}%"
+    elif top_n is not None and top_n > 0:
+        priority = ranked[:top_n]
+        picked_by = f"bottom {top_n}"
+    else:
+        # default: bottom quartile (at least 3 items)
+        n = max(3, max(1, len(ranked)//4))
+        priority = ranked[:n]
+        picked_by = f"bottom quartile ({n})"
+
+    # LLM prompt
+    client = get_llm_client()
+    prompt = f"""
+    You are the analytics assistant for a learning game platform.
+    Given minigames with completion rates (%), attempted/completed counts,
+    identify where support should be prioritised and what to do next.
+
+    Selection rule used: {picked_by}
+
+    Priority list (lowest completion first):
+    {[
+        {'id': r['Level_ID'], 'name': r['Name'], 'completion_%': r['completion_rate'],
+        'attempted': r['attempted'], 'completed': r['completed']}
+        for r in priority
+    ]}
+
+    All games (for context):
+    {[
+        {'id': r['Level_ID'], 'name': r['Name'], 'completion_%': r['completion_rate'],
+        'attempted': r['attempted'], 'completed': r['completed']}
+        for r in ranked
+    ]}
+
+    Write a concise, actionable markdown brief:
+    - Bullet a ranked priority list with reasons (e.g., low completion %, high attempts but low success).
+    - Suggest 2–3 targeted actions per game (UX tweaks, scaffolding hints, tutorial step, error messaging, difficulty curve).
+    - Add a short global “next 2 weeks” plan (A/B tests, instrumentation to add).
+    Keep it under 250 words.
+    """
+    # You already have an LLM helper; use it if you prefer, else call client directly.
+    text = mg.ai_prioritise_low_performing(ranked, priority, picked_by, client)
+
+    return jsonify({"analysis": text, "selected": priority, "all": ranked})
