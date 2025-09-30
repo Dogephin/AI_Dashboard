@@ -238,26 +238,31 @@ function toggleDetails(gameId) {
 
             // Attach click handler AFTER modal is rendered
             document.getElementById('btn-analyze-warnings').addEventListener('click', () => {
-                const aiModal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
-                const aiContent = document.getElementById('ai-warning-content');
-                aiContent.innerHTML = 'Generating AI summary...';
-                aiModal.show();
+                // Hide stats modal if open
+                if (statsModalInstance) statsModalInstance.hide();
 
-                fetch(`/api/minigames/${gameId}/warnings/ai-summary`)
+                // Show AI Warning modal above stats
+                const warningContent = document.getElementById('ai-warning-content');
+                warningContent.innerHTML = '<em>Generating AI warning summary…</em>';
+
+                // Fetch and format AI warning summary
+                fetch(`/api/minigames/${gameId}/warnings/ai-summary?force_refresh=true`, { cache: 'no-store' })
                     .then(r => r.json())
-                    .then(data => {
-                        if (data.analysis) {
-                            aiContent.innerHTML = `<pre>${data.analysis}</pre>`;
-                        } else if (data.message) {
-                            aiContent.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
-                        } else {
-                            aiContent.innerHTML = '<div class="alert alert-danger">No data returned.</div>';
-                        }
+                    .then(res => {
+                        // Use same styling as AI summary
+                        warningContent.innerHTML = `
+                            <div id="aiModalBody">
+                                ${marked.parse(res.analysis || '<em>No summary available.</em>')}
+                            </div>
+                        `;
                     })
                     .catch(err => {
-                        console.error(err);
-                        aiContent.innerHTML = '<div class="alert alert-danger">Failed to generate AI summary.</div>';
+                        warningContent.innerHTML = '<div class="alert alert-danger">Failed to load AI warning summary.</div>';
                     });
+
+                // Show the modal
+                const aiWarningModal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
+                aiWarningModal.show();
             });
         })
         .catch(err => {
