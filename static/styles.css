@@ -320,6 +320,7 @@ canvas {
 .btn.overall-analysis-btn:hover {
     background: #14532d;
 }
+
 .zoom-tooltip {
     position: absolute;
     top: 50%;
@@ -330,15 +331,20 @@ canvas {
     padding: 8px 12px;
     border-radius: 5px;
     font-size: 0.9em;
-    pointer-events: none; 
+    pointer-events: none;
     z-index: 10;
     opacity: 0;
     animation: fadeOut 3s forwards;
 }
 
 @keyframes fadeOut {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
 }
 
 .results-summary-container {
@@ -1344,4 +1350,89 @@ a.sidebar-link:hover {
 .flash-messages .info {
     background: #d1ecf1;
     color: #0c5460;
+}
+
+/* --- Cohort Dropdown Styling --- */
+.styled-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.styled-input,
+.styled-select {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #333;
+    font-size: 1rem;
+    width: 100%;
+    transition: all 0.25s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+}
+
+.styled-input:hover,
+.styled-select:hover,
+.styled-input:focus,
+.styled-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+    outline: none;
+    background-color: #ffffff;
+}
+
+.styled-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23007bff' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+    padding-right: 35px;
+}
+
+/* Optgroup labels */
+.styled-select optgroup {
+    font-weight: 700;
+    color: #007bff;
+    background-color: #e9f2ff;
+    padding: 6px;
+    border-top: 1px solid #cfe2ff;
+}
+
+.styled-select option {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 6px 10px;
+}
+
+/* Coloured headers for different groups */
+.styled-select optgroup[label*="SIT"] {
+    color: #198754;
+    background-color: #e6fff1;
+}
+
+.styled-select optgroup[label*="Staff"] {
+    color: #b36b00;
+    background-color: #fff3cd;
+}
+
+.styled-select optgroup[label*="Year"] {
+    color: #0d6efd;
+    background-color: #e9f2ff;
+}
+
+.styled-input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(33%) sepia(84%) saturate(6481%) hue-rotate(206deg) brightness(101%) contrast(101%);
+}
+
+.styled-input[type="date"] {
+    line-height: normal;
+}
+
+.styled-select-wrapper select:focus {
+    background-color: #ffffff;
 }

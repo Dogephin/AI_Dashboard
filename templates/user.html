@@ -21,33 +21,52 @@
                         {% if users %}
                         <div class="form-group">
                             <label for="user-select" class="form-label">Select User:</label>
-                            <select id="user-select" class="form-select">
-                                {% for user in users %}
-                                <option value="{{ user.user_id }}">{{ user.username }}</option>
-                                {% endfor %}
-                            </select>
+                            <div class="styled-select-wrapper">
+                                <select id="user-select" class="form-select styled-select">
+                                    {% set grouped_users = {} %}
+                                    {% for user in users %}
+                                    {% set group = user.cohort_group %}
+                                    {% if group not in grouped_users %}
+                                    {% set _ = grouped_users.update({group: []}) %}
+                                    {% endif %}
+                                    {% set _ = grouped_users[group].append(user) %}
+                                    {% endfor %}
+
+                                    {% for group, group_users in grouped_users.items() %}
+                                    <optgroup label="{{ group }}" class="optgroup-label">
+                                        {% for user in group_users %}
+                                        <option value="{{ user.user_id }}">{{ user.username }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
+
                         {% endif %}
 
                         {% if games %}
                         <div class="form-group">
                             <label for="game-select" class="form-label">Select Game:</label>
-                            <select id="game-select" class="form-select">
-                                {% for game in games %}
-                                <option value="{{ game.Level_ID }}">{{ game.Name }}</option>
-                                {% endfor %}
-                                <option value="overall_assessment">Overall Assessment</option>
-                            </select>
+                            <div class="styled-select-wrapper">
+                                <select id="game-select" class="form-select styled-select">
+                                    {% for game in games %}
+                                    <option value="{{ game.Level_ID }}">{{ game.Name }}</option>
+                                    {% endfor %}
+                                    <option value="overall_assessment">Overall Assessment</option>
+                                </select>
+                            </div>
                         </div>
                         {% endif %}
 
                         <div class="form-group">
                             <label for="date-start" class="form-label">Start Date:</label>
-                            <input type="date" id="date-start" class="form-control" max="">
+                            <input type="date" id="date-start" class="form-control styled-input" max="">
                         </div>
+
                         <div class="form-group">
                             <label for="date-end" class="form-label">End Date:</label>
-                            <input type="date" id="date-end" class="form-control" max="">
+                            <input type="date" id="date-end" class="form-control styled-input" max="">
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">Submit</button>

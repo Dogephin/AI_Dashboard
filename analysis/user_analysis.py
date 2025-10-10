@@ -38,8 +38,22 @@ def get_list_of_users():
         with engine.connect() as conn:
             result = conn.execute(query, params)
             users = [dict(row._mapping) for row in result.fetchall()]
+
         logger.info(f"Fetched {len(users)} unique users from the database.")
+
+        # Categorize each user
+        for u in users:
+            u["cohort_group"] = categorize_user(u["username"])
+
+        # Sort by group then name
+        users.sort(key=lambda x: (x["cohort_group"], x["username"]))
+
+        # Print groups
+        for u in users:
+            print(f"User: {u['username']}, Group: {u['cohort_group']}")
+
         return users
+
     except Exception as e:
         logger.error(f"Failed to fetch users: {e}")
         return []
@@ -80,6 +94,40 @@ def get_list_of_games():
     except Exception as e:
         logger.error(f"Failed to fetch games: {e}")
         return []
+
+
+def categorize_user(user_id) -> str:
+    """
+    Dynamically determines the cohort/group from user_id.
+    - 'sit' prefix => 'SIT Students'
+    - 'C' or 'Research' prefix => 'Staff'
+    - purely numeric => 'Year XXXX Cohort'
+    """
+    user_id = str(user_id).strip()
+    uid_lower = user_id.lower()
+
+    # SIT students
+    if uid_lower.startswith("sit"):
+        return "SIT Students"
+
+    # Staff (uppercase C or "Research")
+    if (
+        user_id.upper().startswith("C")
+        or uid_lower.startswith("research")
+        or uid_lower.startswith("p")
+    ):
+        return "Staff"
+
+    # Numeric-based IDs (e.g. 22xxxxxx => Year 2022 Cohort)
+    if user_id.isdigit():
+        prefix = user_id[:2]
+        try:
+            year = 2000 + int(prefix)
+            return f"Year {year} Cohort"
+        except ValueError:
+            return "Unknown"
+
+    return "Unknown"
 
 
 def get_user_game_results(user_id, game_id, date_start=None, date_end=None):
