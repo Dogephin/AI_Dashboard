@@ -48,10 +48,6 @@ def get_list_of_users():
         # Sort by group then name
         users.sort(key=lambda x: (x["cohort_group"], x["username"]))
 
-        # Print groups
-        for u in users:
-            print(f"User: {u['username']}, Group: {u['cohort_group']}")
-
         return users
 
     except Exception as e:
