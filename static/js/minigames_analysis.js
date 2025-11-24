@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.innerHTML = '';
         filtered.forEach(g => grid.appendChild(createCard(g)));
     }
-
     function setupSearch() {
         if (searchInput) {
             searchInput.addEventListener('input', () => {
@@ -203,74 +202,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-function toggleDetails(gameId) {
-    fetch(`/api/minigames/${gameId}/stats`)
-        .then(r => r.json())
-        .then(data => {
-            const s = data.summary;
-            const topMinor = data.top_minor || [];
-            const topSevere = data.top_severe || [];
-            const ws = data.warning_stats || {};
+    function toggleDetails(gameId) {
+        fetch(`/api/minigames/${gameId}/stats`)
+            .then(r => r.json())
+            .then(data => {
+                const s = data.summary;
+                const topMinor = data.top_minor || [];
+                const topSevere = data.top_severe || [];
+                const ws = data.warning_stats || {};
 
-            const html = `
-                <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
-                <p><strong>Unique Users:</strong> ${s.unique_users}</p>
-                <p><strong>Completed:</strong> ${s.completed}</p>
-                <p><strong>Failed:</strong> ${s.failed}</p>
-                <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
-                <p><strong>Average Score:</strong> ${s.average_score}</p>
+                const html = `
+                    <p><strong>Total Attempts:</strong> ${s.total_attempts}</p>
+                    <p><strong>Unique Users:</strong> ${s.unique_users}</p>
+                    <p><strong>Completed:</strong> ${s.completed}</p>
+                    <p><strong>Failed:</strong> ${s.failed}</p>
+                    <p><strong>Completion Rate:</strong> ${s.completion_rate}%</p>
+                    <p><strong>Average Score:</strong> ${s.average_score}</p>
 
-                <h5 class="mt-3">Top Minor Errors</h5>
-                <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+                    <h5 class="mt-3">Top Minor Errors</h5>
+                    <ul>${topMinor.length ? topMinor.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
 
-                <h5 class="mt-3">Top Severe Errors</h5>
-                <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
+                    <h5 class="mt-3">Top Severe Errors</h5>
+                    <ul>${topSevere.length ? topSevere.map(e => `<li>${e[0]} (${e[1]})</li>`).join('') : '<li>None</li>'}</ul>
 
-                <h5 class="mt-3">Warnings (Monthly)</h5>
-                <p><strong>This Month:</strong> ${ws.this_month_warnings || 0}</p>
-                <p><strong>Last Month:</strong> ${ws.last_month_warnings || 0}</p>
-                <p><strong>% Change:</strong> ${ws.percent_change !== null ? ws.percent_change + '%' : 'N/A'}</p>
+                    <h5 class="mt-3">Warnings (Monthly)</h5>
+                    <p><strong>This Month:</strong> ${ws.this_month_warnings || 0}</p>
+                    <p><strong>Last Month:</strong> ${ws.last_month_warnings || 0}</p>
+                    <p><strong>% Change:</strong> ${ws.percent_change !== null ? ws.percent_change + '%' : 'N/A'}</p>
 
-                <button id="btn-analyze-warnings" class="btn btn-primary mt-3">Analyze Warnings</button>
-            `;
+                    <button id="btn-analyze-warnings" class="btn btn-primary mt-3">Analyze Warnings</button>
+                `;
 
-            showStatsModal(html);
+                showStatsModal(html);
 
-            // Attach click handler AFTER modal is rendered
-            document.getElementById('btn-analyze-warnings').addEventListener('click', () => {
-                // Hide stats modal if open
-                if (statsModalInstance) statsModalInstance.hide();
+                // Attach click handler AFTER modal is rendered
+                document.getElementById('btn-analyze-warnings').addEventListener('click', () => {
+                    // Hide stats modal if open
+                    if (statsModalInstance) statsModalInstance.hide();
 
-                // Show AI Warning modal above stats
-                const warningContent = document.getElementById('ai-warning-content');
-                warningContent.innerHTML = '<em>Generating AI warning summary…</em>';
+                    // Show AI Warning modal above stats
+                    const warningContent = document.getElementById('ai-warning-content');
+                    warningContent.innerHTML = '<em>Generating AI warning summary…</em>';
 
-                // Fetch and format AI warning summary
-                fetch(`/api/minigames/${gameId}/warnings/ai-summary?force_refresh=true`, { cache: 'no-store' })
-                    .then(r => r.json())
-                    .then(res => {
-                        // Use same styling as AI summary
-                        warningContent.innerHTML = `
-                            <div id="aiModalBody">
-                                ${marked.parse(res.analysis || '<em>No summary available.</em>')}
-                            </div>
-                        `;
-                    })
-                    .catch(err => {
-                        warningContent.innerHTML = '<div class="alert alert-danger">Failed to load AI warning summary.</div>';
-                    });
+                    // Fetch and format AI warning summary
+                    fetch(`/api/minigames/${gameId}/warnings/ai-summary?force_refresh=true`, { cache: 'no-store' })
+                        .then(r => r.json())
+                        .then(res => {
+                            // Use same styling as AI summary
+                            warningContent.innerHTML = `
+                                <div id="aiModalBody">
+                                    ${marked.parse(res.analysis || '<em>No summary available.</em>')}
+                                </div>
+                            `;
+                        })
+                        .catch(err => {
+                            warningContent.innerHTML = '<div class="alert alert-danger">Failed to load AI warning summary.</div>';
+                        });
 
-                // Show the modal
-                const aiWarningModal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
-                aiWarningModal.show();
+                    // Show the modal
+                    const aiWarningModal = new bootstrap.Modal(document.getElementById('aiWarningModal'));
+                    aiWarningModal.show();
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
             });
-        })
-        .catch(err => {
-            console.error(err);
-            showStatsModal('<div class="alert alert-danger">Failed to load stats.</div>');
-        });
-}
-
+    }
 
     function attachAiButton(gameId) {
         const btn = document.querySelector(`button.ai-summary-btn[data-game-id="${gameId}"]`);
@@ -288,7 +286,7 @@ function toggleDetails(gameId) {
 
             showAiModal('<em>Generating summary…</em>');
 
-            fetch(`/api/minigames/${gameId}/ai-summary`)
+            fetch(`/api/minigames/${gameId}/ai-summary?force_refresh=false`)
                 .then(r => r.json())
                 .then(res => {
                     const result = res.analysis || 'No summary available.';
@@ -375,57 +373,119 @@ function toggleDetails(gameId) {
     const refreshCombinedBtn = document.getElementById('refreshCombinedBtn');
     const combinedModeSelect = document.getElementById('combinedModeSelect');
 
-    function fmt(val, dp=2) {
-  if (val === null || val === undefined) return '—';
-  return Number(val).toFixed(dp);
-}
+    function fmt(val, dp = 2) {
+        if (val === null || val === undefined) return '—';
+        return Number(val).toFixed(dp);
+    }
 
-function wireAiExplainButtonsWithinTable(tbody) {
-  tbody.querySelectorAll('button[data-level]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const gameId = btn.getAttribute('data-level');
+    function wireAiExplainButtonsWithinTable(tbody) {
+        tbody.querySelectorAll('button[data-level]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const gameId = btn.getAttribute('data-level');
 
-      const modalContent = document.getElementById('aiModalBody');
-      const cancelBtn = document.getElementById('btn-cancel-analysis');
-      const downloadBtn = document.getElementById('btn-download-analysis');
-      const regenerateBtn = document.getElementById('btn-regenerate-analysis');
+                const modalContent = document.getElementById('aiModalBody');
+                const cancelBtn = document.getElementById('btn-cancel-analysis');
+                const downloadBtn = document.getElementById('btn-download-analysis');
+                const regenerateBtn = document.getElementById('btn-regenerate-analysis');
 
-      // keep summary UI untouched; just reuse the modal shell
-      if (cancelBtn) cancelBtn.classList.add('d-none');
-      if (downloadBtn) downloadBtn.classList.add('d-none');
-      if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                // keep summary UI untouched; just reuse the modal shell
+                if (cancelBtn) cancelBtn.classList.remove('d-none');
+                if (downloadBtn) downloadBtn.classList.add('d-none');
+                if (regenerateBtn) regenerateBtn.classList.add('d-none');
 
-      showAiModal('<em>Generating explanation…</em>');
+                // Close modal on cancel
+                if (cancelBtn) {
+                    cancelBtn.onclick = () => {
+                        const aiModalEl = document.getElementById('aiModal');
+                        const inst = bootstrap.Modal.getInstance(aiModalEl) || new bootstrap.Modal(aiModalEl);
+                        inst.hide();
+                    };
+                }
 
-      fetchAiExplain(gameId)
-        .then(({ analysis }) => {
-          const result = analysis || 'No explanation available.';
-          const html = (typeof marked !== 'undefined') ? marked.parse(result) : result;
-          modalContent.innerHTML = `<div class="px-2 py-1">${html}</div>`;
+                showAiModal('<em>Generating explanation…</em>');
 
-          // allow download of the explanation
-          if (downloadBtn && result.trim()) {
-            downloadBtn.classList.remove('d-none');
-            downloadBtn.onclick = () => {
-              const blob = new Blob([result], { type: 'text/plain' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `[Minigame ${gameId}] - AI_EXPLAIN.txt`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            };
-          }
-        })
-        .catch(() => {
-          modalContent.innerHTML = '<div class="text-danger">Failed to get AI explanation.</div>';
+                fetch(`/api/minigames/${gameId}/ai-explain?mode=${encodeURIComponent(currentMode())}&force_refresh=false`)
+                    .then(r => r.json())
+                    .then(({ analysis }) => {
+                        const result = analysis || 'No explanation available.';
+                        modalContent.innerHTML = `<div class="px-2 py-1">${marked.parse(result)}</div>`;
+
+                        // download
+                        if (downloadBtn && result.trim()) {
+                            downloadBtn.classList.remove('d-none');
+                            downloadBtn.onclick = () => {
+                                const blob = new Blob([result], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `[Minigame ${gameId}] - AI_EXPLAIN.txt`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            };
+                        }
+
+                        // hide cancel after success
+                        if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                        // show regenerate button
+                        if (regenerateBtn) {
+                            regenerateBtn.classList.remove('d-none');
+                            regenerateBtn.onclick = function () {
+                                // hide download and regenerate buttons, show cancel while fetching
+                                if (downloadBtn) downloadBtn.classList.add('d-none');
+                                if (regenerateBtn) regenerateBtn.classList.add('d-none');
+                                if (cancelBtn) cancelBtn.classList.remove('d-none');
+
+                                modalContent.innerHTML = `
+                                    <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div class="mt-3">Regenerating explanation... please wait.</div>
+                                    </div>
+                                `;
+
+                                fetch(`/api/minigames/${gameId}/ai-explain?mode=${encodeURIComponent(currentMode())}&force_refresh=true`)
+                                    .then(r => r.json())
+                                    .then(res => {
+                                        const result = res.analysis || 'No explanation available.';
+                                        modalContent.innerHTML = `<div class="px-2 py-1">${marked.parse(result)}</div>`;
+
+                                        if (downloadBtn && result.trim()) downloadBtn.classList.remove('d-none');
+                                        if (regenerateBtn) regenerateBtn.classList.remove('d-none');
+                                        if (cancelBtn) cancelBtn.classList.add('d-none');
+
+                                        // download click
+                                        if (downloadBtn) {
+                                            downloadBtn.onclick = () => {
+                                                const blob = new Blob([result], { type: 'text/plain' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `[Minigame ${gameId}] - AI_EXPLAIN.txt`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(url);
+                                            };
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error("Regenerate explanation error:", err);
+                                        modalContent.innerHTML = `<p class="text-danger">An error occurred while regenerating the explanation.</p>`;
+                                    });
+                            };
+                        }
+                    })
+                    .catch(() => {
+                        modalContent.innerHTML = '<div class="text-danger">Failed to get AI explanation.</div>';
+                        if (cancelBtn) cancelBtn.classList.add('d-none');
+                    });
+            });
         });
-    });
-  });
-}
-
+    }
 
     function renderCombinedTable(data) {
         if (!combinedTable) return;
@@ -442,54 +502,45 @@ function wireAiExplainButtonsWithinTable(tbody) {
             if (key === worstKey || key === toughKey) tr.classList.add('table-danger');
 
             tr.innerHTML = `
-            <td>${row.Name}</td>
-            <td>${row.Mode || '—'}</td>
-            <td class="text-end">${row.completed}</td>
-            <td class="text-end">${row.failed}</td>
-            <td class="text-end">${row.userexit}</td>
-            <td class="text-end">${row.failure_success_str}</td>
-            <td class="text-end">${fmt(row.failure_success_ratio)}</td>
-            <td class="text-end">${fmt(row.avg_attempts_before_success)}</td>
-            <td class="text-end">${row.users_considered}</td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-outline-danger" data-level="${row.Level_ID}">AI Explain</button>
-            </td>
+                <td>${row.Name}</td>
+                <td>${row.Mode || '—'}</td>
+                <td class="text-end">${row.completed}</td>
+                <td class="text-end">${row.failed}</td>
+                <td class="text-end">${row.userexit}</td>
+                <td class="text-end">${row.failure_success_str}</td>
+                <td class="text-end">${fmt(row.failure_success_ratio)}</td>
+                <td class="text-end">${fmt(row.avg_attempts_before_success)}</td>
+                <td class="text-end">${row.users_considered}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-danger" data-level="${row.Level_ID}">AI Explain</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // 🔗 attach click handlers for the newly-rendered buttons
         wireAiExplainButtonsWithinTable(tbody);
-        }
-
-
-        function currentMode() {
-        const sel = document.getElementById('combinedModeSelect');
-        return (sel && sel.value) ? sel.value : 'all';
-        }
-
-        function fetchAiExplain(gameId) {
-        return fetch(`/api/minigames/${gameId}/ai-explain?mode=${encodeURIComponent(currentMode())}`)
-            .then(r => r.json());
     }
 
+    function currentMode() {
+        const sel = document.getElementById('combinedModeSelect');
+        return (sel && sel.value) ? sel.value : 'all';
+    }
 
     function loadCombined() {
-    const mode = currentMode();
-    fetch(`/api/minigames/combined-stats?mode=${encodeURIComponent(mode)}`)
-        .then(r => r.json())
-        .then(data => renderCombinedTable(data))
-        .catch(err => {
-        console.error(err);
-        if (combinedTable) {
-            combinedTable.querySelector('tbody').innerHTML =
-            '<tr><td colspan="9"><div class="alert alert-danger mb-0">Failed to load combined stats.</div></td></tr>';
-        }
-        });
+        fetch(`/api/minigames/combined-stats?mode=${encodeURIComponent(currentMode())}`)
+            .then(r => r.json())
+            .then(data => renderCombinedTable(data))
+            .catch(err => {
+                console.error(err);
+                if (combinedTable) {
+                    combinedTable.querySelector('tbody').innerHTML =
+                        '<tr><td colspan="10"><div class="alert alert-danger mb-0">Failed to load combined stats.</div></td></tr>';
+                }
+            });
     }
 
     if (refreshCombinedBtn) refreshCombinedBtn.addEventListener('click', loadCombined);
     if (combinedModeSelect) combinedModeSelect.addEventListener('change', loadCombined);
-    loadCombined();
 
+    loadCombined();
 });

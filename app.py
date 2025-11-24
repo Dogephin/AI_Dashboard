@@ -41,10 +41,12 @@ app.register_blueprint(login_bp)
 
 init_cache(app)
 
+
 # Route to test round robin of nginx load balancing
 @app.route("/whoami")
 def whoami():
     return f"Served by container: {socket.gethostname()}"
+
 
 if __name__ == "__main__":
     test_db_connection()
